@@ -1,8 +1,8 @@
 # BYTE BACK 방어전 R5 — 5단계 저장점
 
-화면의 메모 조회·추가·수정·삭제는 서버 함수로 요청합니다. 서버는 로그인 토큰과 메모 소유자를 확인하며, Supabase의 `study_notes`에서 `PUBLIC`, `anon`, `authenticated`의 직접 테이블·열 권한을 회수했습니다. 로그인은 기존 Supabase Auth를 사용합니다. 적용한 권한 회수 SQL은 `scripts/step5-revoke-notes.sql`에 기록되어 있습니다.
+화면의 로그인·로그아웃과 메모 조회·추가·수정·삭제는 서버 함수로 요청합니다. 서버는 Supabase Auth와 안전한 쿠키로 로그인 세션을 관리하고 로그인 토큰과 메모 소유자를 확인합니다. Supabase의 `study_notes`에서 `PUBLIC`, `anon`, `authenticated`의 직접 테이블·열 권한을 회수했습니다. 적용한 권한 회수 SQL은 `scripts/step5-revoke-notes.sql`에 기록되어 있습니다.
 
-사용자가 권한 회수 후 A의 메모 CRUD와 공개 키를 통한 원본 직접 요청에서 메모가 반환되지 않는 것을 확인했습니다. `anon` 및 `authenticated`의 테이블·열 유효 권한도 모두 false로 확인했습니다. 공개 키는 로그인에 사용하므로 화면 코드에 남아 있습니다. `aleph.config.json`의 원본 자료 주소는 쿼리가 없는 HTTPS 경로입니다.
+사용자가 권한 회수 후 A의 메모 CRUD와 공개 키를 통한 원본 직접 요청에서 메모가 반환되지 않는 것을 확인했습니다. `anon` 및 `authenticated`의 테이블·열 유효 권한도 모두 false로 확인했습니다. 서버 로그인 변경 후 A·B의 로그인, 메모 CRUD, 새로고침과 로그아웃이 정상이라고 사용자가 확인했습니다. 화면 코드에는 Supabase 공개 키가 없으며, `aleph.config.json`의 원본 자료 주소는 쿼리가 없는 HTTPS 경로입니다.
 
 로컬 빌드는 `npm run build -- --local`입니다. 최신 저장점의 Production 배포·비로그인 JSON 응답과 보안 헤더 및 심판 판정은 별도 확인이 필요합니다. 과거 공개 커밋과 배포에 남은 자료의 노출이 해소되었다는 증거는 없습니다.
 

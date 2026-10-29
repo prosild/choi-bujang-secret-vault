@@ -25,8 +25,8 @@ async function inspect(url) {
 }
 
 export async function runAttackChecks(config) {
-  if (config.step !== 2) {
-    throw new Error('이 공격 점검은 2단계 전용입니다.');
+  if (![2, 3].includes(config.step)) {
+    throw new Error('이 공격 점검은 2~3단계 전용입니다.');
   }
 
   let app;
@@ -68,7 +68,7 @@ export async function runAttackChecks(config) {
     api.body.notes.some(
       (note) =>
         typeof note?.title === 'string' &&
-        typeof note?.content === 'string'
+        (typeof note?.content === 'string' || typeof note?.body === 'string')
     );
 
   return [
@@ -90,7 +90,9 @@ export async function runAttackChecks(config) {
           ? `요청 실패: ${api.error}`
           : apiExposed
             ? `공개 API 약점 잔존: 비로그인 메모 열람 가능 (HTTP ${api.status})`
-            : `비로그인 메모 열람 미확인 (HTTP ${api.status})`,
+            : [401, 403].includes(api.status) && typeof api.body?.error === 'string'
+              ? `JSON 오류로 비로그인 요청 거부 (HTTP ${api.status})`
+              : `비로그인 메모 열람 미확인; 요청 거부 여부 별도 확인 필요 (HTTP ${api.status})`,
     },
   ];
 }

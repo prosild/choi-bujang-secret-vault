@@ -12,7 +12,14 @@
   li { border: 1px solid #51667c; border-radius: 12px; padding: 16px; background: #1a2a3d; }
   strong { display: block; margin-bottom: 6px; }
   li span { color: #bfd0e5; }
+  .auth-panel { border: 1px solid #51667c; border-radius: 12px; padding: 18px; background: #1a2a3d; }
+  .auth-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .auth-header h2 { margin: 0; font-size: 1.1rem; }
+  #auth-status { margin: 4px 0 0; }
+  #auth-error:empty { display: none; }
   form { display: grid; gap: 10px; max-width: 360px; margin-bottom: 16px; }
+  form[hidden] { display: none; }
+  #login-form:not([hidden]) { margin-top: 16px; }
   input, button { font: inherit; padding: 10px; border-radius: 6px; }
   button { cursor: pointer; }
 </style>
@@ -20,9 +27,14 @@
 <body>
 <main>
   <h1>내 자료실</h1>
-  <section aria-labelledby="auth-title">
-    <h2 id="auth-title">로그인</h2>
-    <p id="auth-status" role="status">로그인 상태를 확인하는 중입니다.</p>
+  <section class="auth-panel" aria-labelledby="auth-title">
+    <div class="auth-header">
+      <div>
+        <h2 id="auth-title">계정</h2>
+        <p id="auth-status" role="status">로그인 상태를 확인하는 중입니다.</p>
+      </div>
+      <button id="logout" type="button" hidden>로그아웃</button>
+    </div>
     <form id="login-form" hidden>
       <label for="email">이메일</label>
       <input id="email" type="email" autocomplete="username" required>
@@ -30,11 +42,10 @@
       <input id="password" type="password" autocomplete="current-password" required>
       <button type="submit">로그인</button>
     </form>
-    <button id="logout" type="button" hidden>로그아웃</button>
     <p id="auth-error" role="alert"></p>
   </section>
-  <p>2단계: 서버 함수가 학습용 데이터베이스에서 가상 메모를 불러옵니다. 이 API 주소는 아직 비로그인으로 열립니다.</p>
-  <ul id="notes" aria-live="polite"><li>메모를 불러오는 중입니다.</li></ul>
+  <p>로그인하면 학습용 가상 메모를 볼 수 있습니다.</p>
+  <ul id="notes" aria-live="polite"><li>로그인 상태를 확인하는 중입니다.</li></ul>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script type="module">
@@ -43,8 +54,37 @@
   const status = document.querySelector('#auth-status');
   const errorMessage = document.querySelector('#auth-error');
   const password = document.querySelector('#password');
+  const list = document.querySelector('#notes');
+  let requestVersion = 0;
+  async function loadNotes(session) {
+    const version = ++requestVersion;
+    list.textContent = session ? '메모를 불러오는 중입니다.' : '로그인하면 메모를 볼 수 있습니다.';
+    if (!session) return;
+    try {
+      const response = await fetch('/api/notes', {
+        cache: 'no-store', headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!response.ok) throw new Error('메모를 불러올 수 없습니다.');
+      const payload = await response.json();
+      if (!Array.isArray(payload.notes)) throw new Error('메모 응답 형식이 올바르지 않습니다.');
+      if (version !== requestVersion) return;
+      list.replaceChildren(...payload.notes.map(note => {
+        const li = document.createElement('li');
+        const title = document.createElement('strong');
+        const body = document.createElement('span');
+        title.textContent = note.title;
+        body.textContent = note.content;
+        li.append(title, body);
+        return li;
+      }));
+      if (payload.notes.length === 0) list.textContent = '등록된 가상 메모가 없습니다.';
+    } catch {
+      if (version === requestVersion) list.textContent = '메모를 불러올 수 없습니다.';
+    }
+  }
   if (!window.supabase) {
     status.textContent = '로그인 서비스를 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.';
+    list.textContent = '로그인 서비스를 불러오지 못해 메모를 표시할 수 없습니다.';
   } else {
     const client = window.supabase.createClient(
       'https://ocacvvmryvtqajlmosqj.supabase.co',
@@ -55,7 +95,10 @@
       logout.hidden = !session;
       status.textContent = session ? '로그인되어 있습니다.' : '로그인되어 있지 않습니다.';
     };
-    client.auth.onAuthStateChange((_event, session) => showSession(session));
+    client.auth.onAuthStateChange((_event, session) => {
+      showSession(session);
+      void loadNotes(session);
+    });
     form.addEventListener('submit', async event => {
       event.preventDefault();
       errorMessage.textContent = '';
@@ -86,25 +129,6 @@
         logout.disabled = false;
       }
     });
-  }
-  const list = document.querySelector('#notes');
-  try {
-    const response = await fetch('/api/notes', { cache: 'no-store' });
-    if (!response.ok) throw new Error('메모를 불러올 수 없습니다.');
-    const payload = await response.json();
-    if (!Array.isArray(payload.notes)) throw new Error('메모 응답 형식이 올바르지 않습니다.');
-    list.replaceChildren(...payload.notes.map(note => {
-      const li = document.createElement('li');
-      const title = document.createElement('strong');
-      const body = document.createElement('span');
-      title.textContent = note.title;
-      body.textContent = note.content;
-      li.append(title, body);
-      return li;
-    }));
-    if (payload.notes.length === 0) list.textContent = '등록된 가상 메모가 없습니다.';
-  } catch {
-    list.textContent = '메모를 불러올 수 없습니다.';
   }
 </script>
 </body>

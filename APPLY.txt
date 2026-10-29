@@ -1,0 +1,8 @@
+Changes for repository root:
+1. Replace README.md, aleph.config.json, public/index.html, scripts/build-public.mjs with included files.
+2. Delete data.json and public/data.json from the current branch.
+3. Keep all other files unchanged.
+4. Run npm run build -- --local and verify public/data.json is absent.
+5. Commit and push these changes using normal Git workflow, then verify the new Vercel deployment.
+6. Run step2_supabase_notes.sql separately in the training Supabase SQL Editor.
+CAUTION: Historic commits and older deployments still contain the training sample notes.

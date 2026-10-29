@@ -25,8 +25,8 @@ async function inspect(url) {
 }
 
 export async function runAttackChecks(config) {
-  if (![2, 3].includes(config.step)) {
-    throw new Error('이 공격 점검은 2~3단계 전용입니다.');
+  if (![2, 3, 4].includes(config.step)) {
+    throw new Error('이 공격 점검은 2~4단계 전용입니다.');
   }
 
   let app;

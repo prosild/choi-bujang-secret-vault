@@ -3,7 +3,43 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BYTE BACK | 내 자료실</title>
-<style>body{margin:0;background:#101a28;color:#ecf4ff;font-family:system-ui,sans-serif}main{max-width:760px;margin:auto;padding:44px 22px}p{line-height:1.7;color:#bfd0e5}</style>
+<style>
+  :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+  body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
+  main { max-width: 760px; margin: 0 auto; padding: 44px 22px; }
+  p { line-height: 1.7; color: #bfd0e5; }
+  ul { padding: 0; list-style: none; display: grid; gap: 12px; }
+  li { border: 1px solid #51667c; border-radius: 12px; padding: 16px; background: #1a2a3d; }
+  strong { display: block; margin-bottom: 6px; }
+  li span { color: #bfd0e5; }
+</style>
 </head>
-<body><main><h1>내 자료실</h1><p>2단계: 가상 자료의 공개 정적 제공을 중단했습니다.</p><p>학습용 데이터베이스 이관은 Supabase SQL Editor에서 별도로 진행합니다.</p></main></body>
+<body>
+<main>
+  <h1>내 자료실</h1>
+  <p>2단계: 서버 함수가 학습용 데이터베이스에서 가상 메모를 불러옵니다. 이 API 주소는 아직 비로그인으로 열립니다.</p>
+  <ul id="notes" aria-live="polite"><li>메모를 불러오는 중입니다.</li></ul>
+</main>
+<script type="module">
+  const list = document.querySelector('#notes');
+  try {
+    const response = await fetch('/api/notes', { cache: 'no-store' });
+    if (!response.ok) throw new Error('메모를 불러올 수 없습니다.');
+    const payload = await response.json();
+    if (!Array.isArray(payload.notes)) throw new Error('메모 응답 형식이 올바르지 않습니다.');
+    list.replaceChildren(...payload.notes.map(note => {
+      const li = document.createElement('li');
+      const title = document.createElement('strong');
+      const body = document.createElement('span');
+      title.textContent = note.title;
+      body.textContent = note.content;
+      li.append(title, body);
+      return li;
+    }));
+    if (payload.notes.length === 0) list.textContent = '등록된 가상 메모가 없습니다.';
+  } catch {
+    list.textContent = '메모를 불러올 수 없습니다.';
+  }
+</script>
+</body>
 </html>

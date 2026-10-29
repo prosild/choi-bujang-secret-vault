@@ -146,7 +146,9 @@
     const showSession = session => {
       form.hidden = Boolean(session);
       logout.hidden = !session;
-      status.textContent = session ? '로그인되어 있습니다.' : '로그인되어 있지 않습니다.';
+      status.textContent = session
+        ? (session.user?.email ? `${session.user.email} 계정으로 로그인 중` : '로그인되어 있습니다.')
+        : '로그인되어 있지 않습니다.';
     };
     client.auth.onAuthStateChange((_event, session) => {
       const previousUser = sessionNow?.user?.id;

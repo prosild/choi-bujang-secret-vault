@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import config from '../aleph.config.json' with { type: 'json' };
 import { randomUUID } from 'node:crypto';
+import { ACCESS_COOKIE, readCookie, sameOrigin } from '../src/session-cookies.mjs';
 
 let verifier;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -17,7 +18,12 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
   }
 
-  const authorization = request.headers?.authorization;
+  const bearer = request.headers?.authorization;
+  const cookieToken = bearer ? null : readCookie(request, ACCESS_COOKIE);
+  if (cookieToken && request.method !== 'GET' && !sameOrigin(request)) {
+    return response.status(403).json({ error: 'INVALID_ORIGIN' });
+  }
+  const authorization = bearer || (cookieToken ? `Bearer ${cookieToken}` : null);
   if (typeof authorization !== 'string' || !authorization) {
     return response.status(401).json({ error: 'UNAUTHORIZED' });
   }

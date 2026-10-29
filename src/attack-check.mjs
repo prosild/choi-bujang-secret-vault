@@ -1,6 +1,4 @@
 
-import { readFile } from 'node:fs/promises';
-
 const checkUrl = (app, path) => new URL(path, app);
 
 async function inspect(url, headers = {}) {
@@ -106,8 +104,8 @@ export async function runAttackChecks(config) {
         || original.username || original.password) {
       throw new Error('원본 자료 API 주소를 확인해 주세요.');
     }
-    const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
-    const key = html.match(/['"](sb_publishable_[A-Za-z0-9_-]+)['"]/u)?.[1];
+    // This is the project's public key; it is used only by this server-side self-check.
+    const key = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_QdAl9tMSE8PtVL5YhFjzmw_IUtYENXz';
     if (key) {
       const result = await inspect(original, { apikey: key });
       attempts.push({

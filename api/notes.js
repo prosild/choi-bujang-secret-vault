@@ -38,6 +38,8 @@ export default async function handler(request, response) {
     const body = request.body;
     if (request.method === 'POST' || request.method === 'PUT') {
       if (!body || typeof body !== 'object' || Array.isArray(body)
+          || Object.keys(body).some(key => !(request.method === 'POST'
+            ? ['id', 'title', 'body'] : ['title', 'body']).includes(key))
           || typeof body.title !== 'string' || !body.title.trim()
           || typeof body.body !== 'string' || !body.body.trim()
           || body.title.length > 200 || body.body.length > 10000
@@ -70,7 +72,8 @@ export default async function handler(request, response) {
     else if (request.method === 'DELETE') query = notes.delete();
     else query = notes.select('id:api_id,title,content');
     if (request.method !== 'GET') query = query.select('id:api_id,title,content');
-    const { data, error } = await query.eq('api_id', id).maybeSingle();
+    const { data, error } = await query.eq('api_id', id)
+      .eq('owner_id', identity.userId).maybeSingle();
     if (error) return response.status(502).json({ error: 'NOTES_UNAVAILABLE' });
     if (!data) return response.status(404).json({ error: 'NOT_FOUND' });
     if (request.method === 'DELETE') return response.status(200).json({ id: data.id });

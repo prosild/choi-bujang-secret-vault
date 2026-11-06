@@ -52,8 +52,8 @@ for (const key of modules) test(`${key}: independent decisions, normal false-blo
 });
 
 test('redaction and read projection omit credentials and raw payload fields', () => {
-  for (const secret of ['password=fake-value', 'token=example-value', 'Bearer example-value', 'sb_secret_example-value']) {
-    assert.equal(redact(secret).includes('value'), false);
+  for (const secret of ['password=fake-value', 'token=example-value', 'Bearer example-value', 'secret=TEST_FAKE_KEY']) {
+    assert.equal(redact(secret), '[REDACTED]');
   }
   assert.equal(redact('safe\ntext'), 'safe text');
 });

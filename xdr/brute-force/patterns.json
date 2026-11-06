@@ -1,0 +1,14 @@
+[
+  {
+    "name": "repeated_login_failure",
+    "conditions": "로그인 실패가 15회 이상이거나 8개 이상 계정에 반복되는 비밀번호 추측",
+    "evidence": "MITRE T1110: 반복적인 암호 추측 및 여러 계정에 대한 password spraying.",
+    "source": "https://attack.mitre.org/techniques/T1110/"
+  },
+  {
+    "name": "limited_login_failure",
+    "conditions": "3~14회 실패는 추가 확인, 성공 1회·단발 오타는 기록",
+    "evidence": "MITRE T1110의 반복 추측을 구분하기 위한 자체 관찰 임계값이며 공격 확정값이 아님.",
+    "source": "https://attack.mitre.org/techniques/T1110/"
+  }
+]

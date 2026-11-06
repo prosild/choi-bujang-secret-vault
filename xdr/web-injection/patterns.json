@@ -1,0 +1,14 @@
+[
+  {
+    "name": "repeated_web_injection",
+    "conditions": "SQL·스크립트·경로 이탈·명령 구분자 표식과 반복 요청 5건 이상",
+    "evidence": "MITRE T1190: 공개 웹 애플리케이션 입력·서비스 취약점 악용; 반복 횟수는 자체 기준.",
+    "source": "https://attack.mitre.org/techniques/T1190/"
+  },
+  {
+    "name": "isolated_web_anomaly",
+    "conditions": "단발 의심 문자·긴 URL·관련 단어만 보이는 경우는 알림",
+    "evidence": "T1190 관련 입력 신호만으로 악용을 확정하지 않으며 단발 교육용 언급을 구분.",
+    "source": "https://attack.mitre.org/techniques/T1190/"
+  }
+]

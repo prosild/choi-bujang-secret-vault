@@ -15,3 +15,5 @@
 13) 정책 시험 사본 한 줄 변조→해시 검증 복원 및 감사·다른 서비스 파일 보존 PASS. 로컬 서버 JWT 검증 시험에서 서명된 B만 복원 가능, A·위조 서명·임의 소유자/본문 요청 거부 PASS. 가상 B 메모 ID는 README에 예정 대상으로 명시, 생성됐다고 기록하지 않음.
 14) XDR 6종 가상 경보 158건: brute-force 10/9/9, web-injection 8/9/9, known-cve 8/8/8, persistence 8/8/8, privilege 9/8/9, exfiltration 10/10/10 (block/alert/record). 정상 이벤트 차단 0건은 로컬 근거 검토이며 공식 정답/심판 점수가 아님. 원본 fixtures 변경 없음. 6개 저장점과 통합 시험 커밋 완료.
 15) 11단계: PWA manifest·오프라인 안내·기기 상태 UI 구현. 기기 승인 엔드포인트는 제공 계약에 없어 미연결 표시/승인 요청 비활성화. 실제 승인·기기 서명 통신 NOT_RUN. Supabase 보안 검사에서 발견한 내부 RLS event trigger의 불필요한 공개 실행 권한을 회수했으며 트리거 자체는 보존함.
+16) 12단계: 서버 본인별 메모·백업·복원 건수 RPC와 작전실 화면, 41개 대표 재검사표, 실행 결과 JSON 생성 명령 구현. npm run verify에서 Node 36/36 PASS, decider 4/4, fixture 2종, detect 6/6, 로컬 build PASS. 운영 엔진 결과·심판 점수는 데이터가 없으므로 미연결/미제출로 표시함.
+17) 원격 main은 여전히 기준점 07d6def이며 기존 GitHub CLI 인증으로 쓰기 준비됨. 원격 푸시/새 배포는 아직 실행 전. 사용자 요청에 따라 심판 제출 승인 절차는 유지.

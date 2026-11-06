@@ -66,8 +66,15 @@
   </form>
   <p id="note-message" role="status"></p>
   <ul id="notes" aria-live="polite"><li>로그인 상태를 확인하는 중입니다.</li></ul>
+  <section class="auth-panel" aria-labelledby="operations-title">
+    <div class="auth-header"><h2 id="operations-title">탈환 작전실</h2><button id="operations-refresh" type="button">기록 새로고침</button></div>
+    <p id="operations-status" role="status">서버 기록을 확인하는 중입니다.</p>
+    <ul id="operations-list"></ul>
+    <p>신원·기기·경로 검증 기반: ALEPH SDP 엔진</p>
+  </section>
 </main>
 <script type="module" src="/client.js"></script>
+<script type="module" src="/operations.js"></script>
 <script type="module">
   const form = document.querySelector('#login-form');
   const logout = document.querySelector('#logout');

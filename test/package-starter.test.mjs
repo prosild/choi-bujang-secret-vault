@@ -14,7 +14,7 @@ test('시작 틀 기준표를 보존하고 학생의 로그인·메모 API를 �
   assert.deepEqual(baseline.functions, []);
   assert.deepEqual(baseline.allowedNew, ['api/ai.js', 'api/threat-intel.js']);
   assert.deepEqual(actual, [...baseline.functions, ...baseline.allowedNew,
-    'api/notes.js', 'api/session.js', 'api/restore.js', 'api/device.js'].sort());
+    'api/notes.js', 'api/session.js', 'api/restore.js', 'api/device.js', 'api/operations.js'].sort());
   const individual = await readFile(new URL('../api/notes/[id].js', import.meta.url), 'utf8');
   assert.match(individual, /export \{ default \} from '\.\.\/notes\.js'/u);
 });

@@ -1,11 +1,12 @@
 
 const checkUrl = (app, path) => new URL(path, app);
 
-async function inspect(url, headers = {}) {
+async function inspect(url, headers = {}, method = 'GET') {
   try {
     const response = await fetch(url, {
       redirect: 'error',
       headers,
+      method,
       signal: AbortSignal.timeout(10000),
     });
 
@@ -124,6 +125,17 @@ export async function runAttackChecks(config) {
     attempts.push({ attackId: 'local_decider_contract',
       expected: '가상 정상 요청 허용 및 미등록 기기 거부; 심판 판정과 별도',
       observed: `가상 요청 ${results.filter(item => item.passed).length}/${results.length} 통과` });
+  }
+  if (config.step >= 10) {
+    if (config.restoreRoute !== '/api/restore') throw new Error('복원 경로 설정을 확인해 주세요.');
+    for (const [method, expectedStatus] of [['GET', 405], ['POST', 401]]) {
+      const result = await inspect(checkUrl(app, config.restoreRoute), {}, method);
+      attempts.push({ attackId: `anonymous_restore_${method.toLowerCase()}`,
+        expected: `${method} 복원 요청이 HTTP ${expectedStatus} JSON 오류로 거부되어야 함`,
+        observed: result.status === null ? `요청 실패: ${result.error}`
+          : `HTTP ${result.status}; JSON 오류 ${typeof result.body?.error === 'string' ? '있음' : '없음'}; `
+            + (result.status === expectedStatus && typeof result.body?.error === 'string' ? '기대와 일치' : '추가 확인 필요') });
+    }
   }
   return attempts;
 }

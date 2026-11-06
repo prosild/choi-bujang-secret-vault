@@ -18,7 +18,7 @@ test('restore accepts only verified B and binds RPC owner and run to signed clai
   }).setProtectedHeader({ alg: 'ES256', kid: jwk.kid }).setSubject(owner).setIssuer(config.judgeIssuer)
     .setAudience(new URL(config.publicAppUrl).hostname).setIssuedAt().setExpirationTime('5m').sign(signingKey);
   const tokens = { b: await token('b'), a: await token('a'), bad: await token('b', (await generateKeyPair('ES256')).privateKey) };
-  const calls = [];
+  const calls = []; let rpcMode = 'success';
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.href === `${config.judgeIssuer}/.well-known/jwks.json`) return Response.json({ keys: [jwk] });
@@ -26,6 +26,9 @@ test('restore accepts only verified B and binds RPC owner and run to signed clai
     assert.equal(body.p_owner, owner); assert.equal(body.p_run, run); assert.equal(body.p_id, noteId);
     if (url.pathname === '/rest/v1/rpc/vault_create_restore_note') return Response.json({ id: noteId });
     assert.equal(url.pathname, '/rest/v1/rpc/vault_restore_note');
+    if (rpcMode === 'rejected') return Response.json({ message: 'backup_hash_mismatch' }, { status: 400 });
+    if (rpcMode === 'wrong-target') return Response.json({ id: owner, restored: true, revision: 1, contentHash: 'a'.repeat(64) });
+    if (rpcMode === 'invalid-hash') return Response.json({ id: noteId, restored: true, revision: 1, contentHash: 'invalid' });
     return Response.json({ id: noteId, restored: true, revision: 1, contentHash: 'a'.repeat(64) });
   };
   async function call(handler, method, auth, body, url) {
@@ -49,4 +52,8 @@ test('restore accepts only verified B and binds RPC owner and run to signed clai
   assert.equal(restored.status, 200); assert.equal(restored.result.restored, true);
   assert.equal(JSON.stringify(restored.result).includes(owner), false);
   assert.equal(JSON.stringify(restored.result).includes(tokens.b), false);
+  for (const [mode, expected] of [['rejected', 409], ['wrong-target', 502], ['invalid-hash', 502]]) {
+    rpcMode = mode;
+    assert.equal((await call(restore, 'POST', tokens.b, { id: noteId }, '/api/restore')).status, expected);
+  }
 });

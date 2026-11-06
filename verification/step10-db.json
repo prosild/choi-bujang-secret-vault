@@ -1,0 +1,21 @@
+{
+  "scope": "live_database_fixture_restore",
+  "status": "NOT_RUN",
+  "date": "2026-11-06",
+  "reason": "User approved the single B fixture test, but the Supabase execution confirmation expired twice. No successful execution result was received.",
+  "script": "scripts/verify-restore-db.sql",
+  "targetId": "b6000000-0000-4000-8000-000000000010",
+  "metadataRead": {
+    "notes": 5,
+    "snapshots": 0,
+    "auditRows": 0,
+    "fixtureExists": false,
+    "rlsEnabled": true,
+    "anonymousDirectSelect": false,
+    "authenticatedDirectSelect": false,
+    "anonymousRestoreExecute": false,
+    "authenticatedRestoreExecute": false,
+    "serverRestoreExecute": true
+  },
+  "notProven": ["live_id_owner_content_hash_match", "live_tamper_and_delete_restore", "live_other_notes_and_audit_preservation"]
+}

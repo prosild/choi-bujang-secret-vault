@@ -1,0 +1,17 @@
+{
+  "scope": "local_policy_and_mock_api",
+  "checkedAt": "2026-11-06T13:54:23.369Z",
+  "policyVersion": "48a6297e36740ff41fbd163cf9e4792cc9fed379",
+  "policyArtifact": "artifacts/policy-1793973261550",
+  "trustedManifestHash": "139477bf5d33349f9fcdb0f5733289414263c6d5153b5239cb082fde8ad41dff",
+  "changedFiles": [
+    "decider.mjs"
+  ],
+  "policyRestored": true,
+  "regression": "PASS",
+  "notRun": [
+    "live_signed_B_restore_http",
+    "live_engine_attacks_after_restore",
+    "judge_resubmission"
+  ]
+}

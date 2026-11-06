@@ -29,6 +29,11 @@ export default async function handler(request, response) {
     const db = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data, error } = await db.rpc('vault_restore_note', { p_run: identity.runId, p_owner: identity.userId, p_id: body.id });
     if (error) return response.status(409).json({ error: 'RESTORE_REJECTED' });
-    return response.status(200).json(data);
+    if (!data || data.id?.toLowerCase() !== body.id.toLowerCase() || data.restored !== true
+      || !Number.isSafeInteger(data.revision) || data.revision < 1
+      || typeof data.contentHash !== 'string' || !/^[a-f0-9]{64}$/u.test(data.contentHash)) {
+      return response.status(502).json({ error: 'RESTORE_RESULT_INVALID' });
+    }
+    return response.status(200).json({ id: data.id, restored: true, revision: data.revision, contentHash: data.contentHash });
   } catch { return response.status(502).json({ error: 'RESTORE_UNAVAILABLE' }); }
 }

@@ -1,8 +1,9 @@
 {
   "scope": "live_database_fixture_restore",
-  "status": "NOT_RUN",
+  "status": "PASS",
   "date": "2026-11-06",
-  "reason": "User approved the single B fixture test, but the Supabase execution confirmation expired twice. No successful execution result was received.",
+  "sourceCommit": "08e3a0a463a4e83e7fba3bb61106a5ae60727b6c",
+  "execution": "Supabase execute_sql, verified by returned assertions and a separate post-rollback query",
   "script": "scripts/verify-restore-db.sql",
   "targetId": "b6000000-0000-4000-8000-000000000010",
   "metadataRead": {
@@ -17,5 +18,19 @@
     "authenticatedRestoreExecute": false,
     "serverRestoreExecute": true
   },
-  "notProven": ["live_id_owner_content_hash_match", "live_tamper_and_delete_restore", "live_other_notes_and_audit_preservation"]
+  "result": {
+    "tamperRestore": true,
+    "deleteRestore": true,
+    "idOwnerContentHashMatch": true,
+    "contentHash": "56d5c1003438d54d950ecd118dd1d15be224883775a292700e009eeb9637a021",
+    "corruptHashRejected": true,
+    "wrongOwnerRejected": true,
+    "wrongTargetRejected": true,
+    "otherNotesUnchanged": true,
+    "auditAppendedWithinTest": 2,
+    "existingAuditUnchanged": true,
+    "fixtureRolledBack": true
+  },
+  "stateAfterRollback": { "notes": 5, "snapshots": 0, "auditRows": 0, "fixtureExists": false },
+  "notProven": ["live_signed_B_restore_http", "live_engine_attacks_after_restore", "judge_resubmission"]
 }

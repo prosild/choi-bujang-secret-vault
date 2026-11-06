@@ -26,7 +26,7 @@ for (const file of files) digest.update(file + '\0').update((await readFile(reso
 const report = { scope: 'local_and_mock', status: checks.every(c => c.status === 'PASS') ? 'PASS' : 'FAIL',
   checkedAt, sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', windowsHide: true }).trim(),
   sourceHash: digest.digest('hex'), tests, checks,
-  notRun: ['live_engine_device_approval', 'live_engine_revocation', 'live_xdr_enforcement', 'live_database_tamper_delete_restore', 'judge_wave3'] };
+  notRun: ['live_engine_device_approval', 'live_engine_revocation', 'live_xdr_enforcement', 'live_signed_B_restore_http', 'judge_wave3'] };
 await mkdir(resolve(root, 'verification'), { recursive: true });
 await writeFile(resolve(root, 'verification/latest.json'), JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify({ status: report.status, tests }));

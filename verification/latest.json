@@ -1,9 +1,9 @@
 {
   "scope": "local_and_mock",
   "status": "PASS",
-  "checkedAt": "2026-11-06T13:54:21.788Z",
-  "sourceCommit": "48a6297e36740ff41fbd163cf9e4792cc9fed379",
-  "sourceHash": "af74a2fa3dd5ebd868bab2cecbc551d60ae11702c4ac8b38e40830a78494f06d",
+  "checkedAt": "2026-11-06T14:01:07.880Z",
+  "sourceCommit": "08e3a0a463a4e83e7fba3bb61106a5ae60727b6c",
+  "sourceHash": "555482e3862460ed197f08f327d684971a66837cd457290ee6c8e5f805332710",
   "tests": {
     "total": 38,
     "passed": 38,
@@ -35,7 +35,7 @@
     "live_engine_device_approval",
     "live_engine_revocation",
     "live_xdr_enforcement",
-    "live_database_tamper_delete_restore",
+    "live_signed_B_restore_http",
     "judge_wave3"
   ]
 }

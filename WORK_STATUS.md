@@ -10,3 +10,4 @@
 8) 6단계 검증 (2026-11-06): npm install 성공, decider:test 2/2 PASS, Node 회귀·경계 검사 12/12 PASS, 로컬 build 성공, diff 공백 검사 성공. 실제 엔진 기기 등록·심판 판정은 NOT_RUN. 비밀값 패턴 검색에 실제 키·토큰 일치 없음.
 9) 7단계 검증 (2026-11-06): decider:test 4/4, fixture:7 정상 allow·복합 이상 step_up, Node 15/15 PASS. 미상 신호는 재인증을 요구하며 유효시간은 300초. 실제 엔진 왕복 NOT_RUN. Supabase 기존 프로젝트가 INACTIVE여서 재개 요청, COMING_UP 확인.
 10) 8단계 로컬 구현: 정확한 개별 메모·읽기 공지 구역과 API 쿼리 우회 차단. 모의 DB에서 두 검증 사용자 소유자 분리·CRUD·타인 404·본문 소유자 위조 거부 PASS. 공지 DB와 실제 엔진 reasonCode 등록은 미확인. 기존 화면의 본인 목록·추가를 보존.
+11) 9단계 검증: detect:test 6/6 PASS, 전체 Node 검사 24/24 PASS, 로컬 build PASS. 600초 경계·121건·순서 뒤섞임·다른 주체·10,000건 분산 입력 검사. 운영 회수 집행 NOT_RUN. Supabase ACTIVE_HEALTHY 복구 및 study_notes 구조 조회 성공.

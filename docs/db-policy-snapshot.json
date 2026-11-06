@@ -1,0 +1,13 @@
+{
+  "capturedAt": "2026-11-06",
+  "source": "Supabase live metadata query",
+  "table": "public.study_notes",
+  "rlsEnabled": true,
+  "directSelect": { "anon": false, "authenticated": false },
+  "policies": [
+    { "name": "study_notes_select_own", "command": "SELECT", "role": "authenticated", "using": "(select auth.uid()) = owner_id" },
+    { "name": "study_notes_insert_own", "command": "INSERT", "role": "authenticated", "check": "(select auth.uid()) = owner_id" },
+    { "name": "study_notes_update_own", "command": "UPDATE", "role": "authenticated", "using": "(select auth.uid()) = owner_id", "check": "(select auth.uid()) = owner_id" },
+    { "name": "study_notes_delete_own", "command": "DELETE", "role": "authenticated", "using": "(select auth.uid()) = owner_id" }
+  ]
+}

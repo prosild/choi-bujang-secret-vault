@@ -62,6 +62,13 @@ export default async function handler(request, response) {
     const notes = supabase.from('study_notes');
     if (!individual && request.method === 'POST') {
       const noteId = body.id ?? randomUUID();
+      if (identity.kind === 'judge' && identity.identity === 'b') {
+        const { error } = await supabase.rpc('vault_create_restore_note', {
+          p_run: identity.runId, p_owner: identity.userId, p_id: noteId, p_title: body.title, p_content: body.body,
+        });
+        if (error) return response.status(502).json({ error: 'NOTES_UNAVAILABLE' });
+        return response.status(201).json({ id: noteId });
+      }
       const { error } = await notes.insert({ api_id: noteId, title: body.title,
         content: body.body, owner_id: identity.userId, sample_marker: 'SAMPLE_NOTE_1' });
       if (error) return response.status(502).json({ error: 'NOTES_UNAVAILABLE' });

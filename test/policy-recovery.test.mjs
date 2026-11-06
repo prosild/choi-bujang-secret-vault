@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { backupPolicy, planRecovery, restoreTestPolicy } from '../scripts/policy-recovery.mjs';
+test('policy recovery verifies backup, refuses changed plans, preserves audit and other services', async () => {
+  const root = resolve(import.meta.dirname, '../artifacts'); await mkdir(root, { recursive: true });
+  const folder = await mkdtemp(join(root, 'policy-test-'));
+  const backup = join(folder, 'backup'), target = join(folder, 'copy');
+  const files = { 'decider.mjs': 'verified policy', 'allowed-routes.json': '["GET /notes/:id"]', 'db-policy.json': '{"rls":true}' };
+  const trustedManifestHash = await backupPolicy(backup, { version: 'fixture-version', files });
+  await mkdir(target);
+  for (const [name, value] of Object.entries(files)) await writeFile(join(target, name), value);
+  await writeFile(join(target, 'audit.log'), 'preserve'); await writeFile(join(target, 'other-service'), 'preserve');
+  await writeFile(join(target, 'decider.mjs'), 'tampered');
+  const plan = await planRecovery(backup, target, trustedManifestHash);
+  assert.equal(plan.changes.length, 1);
+  await assert.rejects(restoreTestPolicy({ backup, target, trustedManifestHash, reviewedChanges: [] }), /changed_after_review/u);
+  await assert.rejects(restoreTestPolicy({ backup, target: resolve(import.meta.dirname, '../src'), trustedManifestHash, reviewedChanges: [] }), /test_copy_required/u);
+  assert.equal((await restoreTestPolicy({ backup, target, trustedManifestHash, reviewedChanges: plan.changes })).verified, true);
+  assert.equal(await readFile(join(target, 'audit.log'), 'utf8'), 'preserve');
+  assert.equal(await readFile(join(target, 'other-service'), 'utf8'), 'preserve');
+  await assert.rejects(planRecovery(backup, target, null), /trusted_hash_required/u);
+  await assert.rejects(planRecovery(join(folder, 'missing'), target, trustedManifestHash), /ENOENT/u);
+  await writeFile(join(backup, 'decider.mjs'), 'corrupted backup');
+  await assert.rejects(planRecovery(backup, target, trustedManifestHash), /backup_hash_mismatch/u);
+});

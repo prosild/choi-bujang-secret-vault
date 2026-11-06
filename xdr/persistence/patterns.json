@@ -1,0 +1,15 @@
+[
+  {
+    "name": "untrusted_autostart",
+    "conditions": "서비스·예약 작업의 임시 실행 파일/서명 부재/반복 등록 또는 미등록 시작 프로그램",
+    "evidence": "MITRE T1543/T1053: 서비스·예약 작업을 통한 반복 실행 및 지속성 확보.",
+    "source": "https://attack.mitre.org/techniques/T1543/",
+    "additionalSource": "https://attack.mitre.org/techniques/T1053/"
+  },
+  {
+    "name": "unconfirmed_autostart_change",
+    "conditions": "서명 미확인·단발 작업·설명 변경 등 불완전한 증거는 알림",
+    "evidence": "T1543/T1053 관련 변경을 검토하되 서명된 기존 작업과 단순 조회를 차단하지 않음.",
+    "source": "https://attack.mitre.org/techniques/T1053/"
+  }
+]

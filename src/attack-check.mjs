@@ -26,8 +26,8 @@ async function inspect(url, headers = {}) {
 }
 
 export async function runAttackChecks(config) {
-  if (![2, 3, 4, 5].includes(config.step)) {
-    throw new Error('이 공격 점검은 2~5단계 전용입니다.');
+  if (!Number.isInteger(config.step) || config.step < 2 || config.step > 12) {
+    throw new Error('이 공격 점검은 2~12단계 전용입니다.');
   }
 
   let app;
@@ -96,7 +96,7 @@ export async function runAttackChecks(config) {
               : `비로그인 메모 열람 미확인; 요청 거부 여부 별도 확인 필요 (HTTP ${api.status})`,
     },
   ];
-  if (config.step === 5) {
+  if (config.step >= 5) {
     const original = new URL(config.originalApiUrl);
     const issuer = new URL(config.identityProvider.issuer);
     if (original.protocol !== 'https:' || original.origin !== issuer.origin
@@ -116,6 +116,14 @@ export async function runAttackChecks(config) {
             : `오류 또는 비배열 응답 (HTTP ${result.status})`,
       });
     }
+  }
+  if (config.step >= 6) {
+    const { decide, RULE_IDS } = await import('./decider.mjs');
+    const { checkDecider } = await import('../scripts/decider-test.mjs');
+    const results = await checkDecider({ decide, ruleIds: RULE_IDS });
+    attempts.push({ attackId: 'local_decider_contract',
+      expected: '가상 정상 요청 허용 및 미등록 기기 거부; 심판 판정과 별도',
+      observed: `가상 요청 ${results.filter(item => item.passed).length}/${results.length} 통과` });
   }
   return attempts;
 }

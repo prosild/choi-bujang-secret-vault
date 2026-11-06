@@ -1,4 +1,12 @@
-# BYTE BACK 방어전 R5 — 5단계 저장점
+# BYTE BACK 방어전 R5 — 6단계 저장점
+
+1) 서버 로그인·로그아웃과 본인 메모 CRUD는 기존 5단계 동작을 유지합니다.
+2) `src/decider.mjs`는 엔진이 확인한 `subjectId`(가명 사용자)와 최상위 `deviceRegistered` 계약을 따릅니다. 기기 값이 정확히 `true`일 때만 허용하며 false·누락·문자열 등은 `deny / device_not_registered`로 거부합니다. 사용자 소유자 검사는 기존 자료 API가 담당합니다.
+3) `npm install`, `npm run decider:test`, `node --test test/*.test.mjs`, `npm run build -- --local` 순서로 재현합니다. `decider:test`의 정상 등록 기기 허용·미등록 거부 결과는 가상 연습이며 실제 엔진이나 심판 통과를 뜻하지 않습니다.
+4) 제출은 사용자 승인 후 진행합니다. 등록 기기의 실제 엔진 경유 접속은 아직 미검증입니다. 새 인증서·개인키를 생성하지 않았습니다.
+5) 아래는 과거 단계별 기록입니다. 특히 2단계의 공개 API 설명은 당시 상태이며 현재 인증된 API의 설명이 아닙니다.
+
+## 5단계 저장점 당시 기록 (이력)
 
 화면의 로그인·로그아웃과 메모 조회·추가·수정·삭제는 서버 함수로 요청합니다. 서버는 Supabase Auth와 안전한 쿠키로 로그인 세션을 관리하고 로그인 토큰과 메모 소유자를 확인합니다. Supabase의 `study_notes`에서 `PUBLIC`, `anon`, `authenticated`의 직접 테이블·열 권한을 회수했습니다. 적용한 권한 회수 SQL은 `scripts/step5-revoke-notes.sql`에 기록되어 있습니다.
 

@@ -4,7 +4,7 @@ import { deploymentIdentity } from '../scripts/deployment-identity.mjs';
 import { runAttackChecks } from '../src/attack-check.mjs';
 
 const config = {
-  step: 1,
+  step: 2,
   judgeIssuer: 'https://aleph-judge-production.up.railway.app/defense/judge',
   sampleMarker: 'SAMPLE_NOTE_1',
   publicAppUrl: 'https://student-defense.vercel.app',
@@ -20,7 +20,7 @@ const env = {
 test('build identity uses Vercel Git and deployment metadata', () => {
   assert.deepEqual(deploymentIdentity(env, config), {
     schema: 'aleph.defense.deployment.v1',
-    step: 1,
+    step: 2,
     repoUrl: 'https://github.com/student-a/aleph-defense',
     commit: 'a'.repeat(40),
     publicAppUrl: 'https://student-defense-123.vercel.app',
@@ -31,26 +31,33 @@ test('build identity uses Vercel Git and deployment metadata', () => {
   assert.throws(() => deploymentIdentity({ ...env, VERCEL_GIT_COMMIT_SHA: 'short' }, config));
 });
 
-test('first attack check reads public data.json without credentials', async () => {
+test('self-check records actual static/API exposure and does not turn failures into PASS', async () => {
   const originalFetch = globalThis.fetch;
-  let requestUrl;
+  const requestUrls = [];
   let options;
   try {
     globalThis.fetch = async (url, init) => {
-      requestUrl = String(url);
+      requestUrls.push(String(url));
       options = init;
-      return new Response(JSON.stringify({ sampleMarker: 'SAMPLE_NOTE_1', notes: [{ title: '가상' }] }), {
+      return new Response(JSON.stringify({ sampleMarker: 'SAMPLE_NOTE_1', notes: [{ title: '가상', body: '합성 시험' }] }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
       });
     };
-    const [result] = await runAttackChecks(config);
-    assert.equal(requestUrl, 'https://student-defense.vercel.app/data.json');
+    const [result, api] = await runAttackChecks(config);
+    assert.deepEqual(requestUrls, ['https://student-defense.vercel.app/data.json',
+      'https://student-defense.vercel.app/api/notes']);
     assert.equal(options.redirect, 'error');
-    assert.match(result.observed, /확인 표시가 보임/u);
+    assert.match(result.observed, /확인 표시 노출 \(HTTP 200\)/u);
+    assert.match(api.observed, /비로그인 메모 열람 가능/u);
     globalThis.fetch = async () => new Response('<html>not the data</html>', { status: 200 });
-    const [failed] = await runAttackChecks(config);
-    assert.match(failed.observed, /보이지 않음/u);
+    const [missing, uncertain] = await runAttackChecks(config);
+    assert.match(missing.observed, /확인 표시 노출 없음/u);
+    assert.match(uncertain.observed, /별도 확인 필요/u);
+    globalThis.fetch = async () => Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+    assert.match((await runAttackChecks(config))[1].observed, /JSON 오류로 비로그인 요청 거부/u);
+    globalThis.fetch = async () => { throw new Error('fixture_network_failure'); };
+    assert.ok((await runAttackChecks(config)).every(item => item.observed.includes('요청 실패')));
   } finally {
     globalThis.fetch = originalFetch;
   }

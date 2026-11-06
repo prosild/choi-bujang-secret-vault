@@ -3,6 +3,7 @@ import { createLoginVerifier } from '../src/verify-login.mjs';
 import config from '../aleph.config.json' with { type: 'json' };
 import { randomUUID } from 'node:crypto';
 import { ACCESS_COOKIE, readCookie, sameOrigin } from '../src/session-cookies.mjs';
+import { resourcePath } from '../src/api-resource.mjs';
 
 let verifier;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -10,6 +11,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store, private');
   response.setHeader('X-Content-Type-Options', 'nosniff');
+  if (!resourcePath(request, 'notes')) return response.status(400).json({ error: 'INVALID_RESOURCE_PATH' });
   const id = request.query?.id;
   const individual = id !== undefined;
   const methods = individual ? ['GET', 'PUT', 'DELETE'] : ['GET', 'POST'];

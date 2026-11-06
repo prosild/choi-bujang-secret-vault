@@ -1,6 +1,17 @@
 // 신원·기기·경로 검증은 ALEPH SDP 엔진이 담당합니다.
 // 브라우저의 임의 헤더나 추가 필드를 신뢰하지 않습니다.
-export const RULE_IDS = Object.freeze(['device_registered', 'step_up_required']);
+export const RULE_IDS = Object.freeze(['device_registered', 'step_up_required', 'resource_scope']);
+
+function permittedResource(request) {
+  if (request.queryLength !== 0 || typeof request.path !== 'string') return false;
+  const match = /^\/(?:api\/)?(notes|announcements)\/([^/?#%\\]+)$/u.exec(request.path);
+  if (!match || ['.', '..', 'export', 'admin', 'search', 'all'].includes(match[2].toLowerCase())) return false;
+  const [, service] = match;
+  const prefix = request.path.startsWith('/api/') ? '/api' : '';
+  return request.service === service
+    && request.route === `${request.method} ${prefix}/${service}/:id`
+    && (service === 'notes' ? ['GET', 'PUT', 'DELETE'].includes(request.method) : request.method === 'GET');
+}
 
 function needsStepUp(request) {
   const signals = request.signals;
@@ -24,11 +35,15 @@ export async function decide(request) {
     && Number.isFinite(request.stepUp.authAgeSeconds)
     && request.stepUp.authAgeSeconds >= 0 && request.stepUp.authAgeSeconds <= 300;
   const additional = registered && needsStepUp(request) && !fresh;
+  if (registered && !permittedResource(request)) {
+    return { schema: 'aleph.decision.v1', requestId: request.requestId, decision: 'deny',
+      reasonCode: 'route_not_allowed', ruleIds: ['resource_scope'] };
+  }
   return {
     schema: 'aleph.decision.v1',
     requestId: request?.requestId,
     decision: !registered ? 'deny' : additional ? 'step_up' : 'allow',
     reasonCode: !registered ? 'device_not_registered' : additional ? 'step_up_required' : 'approved',
-    ruleIds: !registered ? ['device_registered'] : ['device_registered', 'step_up_required'],
+    ruleIds: !registered ? ['device_registered'] : ['device_registered', 'step_up_required', 'resource_scope'],
   };
 }

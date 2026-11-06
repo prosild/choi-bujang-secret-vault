@@ -1,0 +1,15 @@
+[
+  {
+    "name": "large_unusual_transfer",
+    "conditions": "50MB 이상 전송에 새 목적지·시간 이탈·반복·다수 파일·명령 통로가 결합",
+    "evidence": "MITRE T1041/T1048: C2 또는 대체 프로토콜을 통한 자료 전송; 용량 기준은 자체 기준.",
+    "source": "https://attack.mitre.org/techniques/T1041/",
+    "additionalSource": "https://attack.mitre.org/techniques/T1048/"
+  },
+  {
+    "name": "unconfirmed_transfer",
+    "conditions": "소규모 새 목적지·압축 준비·일회성 용량 증가·실패 전송은 알림",
+    "evidence": "T1041/T1048 관련 징후를 기록하되 평소 자료실의 작은 정상 요청은 차단하지 않음.",
+    "source": "https://attack.mitre.org/techniques/T1048/"
+  }
+]

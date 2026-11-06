@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BYTE BACK | 내 자료실</title>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#101a28">
+<link rel="icon" href="/vault-icon.svg" type="image/svg+xml">
 <style>
   :root { color-scheme: dark; font-family: system-ui, sans-serif; }
   body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
@@ -29,6 +31,8 @@
 <body>
 <main>
   <h1>내 자료실</h1>
+  <p id="network-status" role="status" hidden></p>
+  <button id="install-app" type="button" hidden>자료실 앱 설치</button>
   <section class="auth-panel" aria-labelledby="auth-title">
     <div class="auth-header">
       <div>
@@ -46,6 +50,11 @@
     </form>
     <p id="auth-error" role="alert"></p>
   </section>
+  <section class="auth-panel" aria-labelledby="device-title" style="margin-top:16px">
+    <h2 id="device-title">접속 기기</h2>
+    <p id="device-status" role="status">기기 상태를 확인하는 중입니다.</p>
+    <div class="note-actions"><button id="device-refresh" type="button">기기 상태 확인</button><button id="device-request" type="button" disabled>승인 요청</button></div>
+  </section>
   <p>로그인하면 학습용 가상 메모를 볼 수 있습니다.</p>
   <form id="note-form" hidden>
     <h2 id="note-form-title">메모 추가</h2>
@@ -58,6 +67,7 @@
   <p id="note-message" role="status"></p>
   <ul id="notes" aria-live="polite"><li>로그인 상태를 확인하는 중입니다.</li></ul>
 </main>
+<script type="module" src="/client.js"></script>
 <script type="module">
   const form = document.querySelector('#login-form');
   const logout = document.querySelector('#logout');
@@ -149,6 +159,7 @@
     function setSession(session) {
       const previousUser = sessionNow?.user?.id;
       sessionNow = session;
+      window.dispatchEvent(new Event('vault-session-changed'));
       noteForm.hidden = !session;
       if (!session || previousUser !== session.user?.id) { resetEditor(); noteMessage.textContent = ''; }
       showSession(session);

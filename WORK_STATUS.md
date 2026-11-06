@@ -13,3 +13,5 @@
 11) 9단계 검증: detect:test 6/6 PASS, 전체 Node 검사 24/24 PASS, 로컬 build PASS. 600초 경계·121건·순서 뒤섞임·다른 주체·10,000건 분산 입력 검사. 운영 회수 집행 NOT_RUN. Supabase ACTIVE_HEALTHY 복구 및 study_notes 구조 조회 성공.
 12) 10단계: 정책 해시 사본·시험 사본 차이 표시·선택 복원, 서명된 심판 B 최초 메모의 비공개 스냅샷·복원 RPC·POST API 구현. DB 구조 적용 성공. 실DB 변조/삭제 시험은 Supabase 확인 만료로 실행되지 않았으며 이후 사용자가 확인 생략 요청하여 NOT_RUN 유지. 실제 조회상 기존 메모 5건, 사본 0건, 감사 0건 보존. 익명/일반 사용자 RPC 실행 불가, 서버만 가능.
 13) 정책 시험 사본 한 줄 변조→해시 검증 복원 및 감사·다른 서비스 파일 보존 PASS. 로컬 서버 JWT 검증 시험에서 서명된 B만 복원 가능, A·위조 서명·임의 소유자/본문 요청 거부 PASS. 가상 B 메모 ID는 README에 예정 대상으로 명시, 생성됐다고 기록하지 않음.
+14) XDR 6종 가상 경보 158건: brute-force 10/9/9, web-injection 8/9/9, known-cve 8/8/8, persistence 8/8/8, privilege 9/8/9, exfiltration 10/10/10 (block/alert/record). 정상 이벤트 차단 0건은 로컬 근거 검토이며 공식 정답/심판 점수가 아님. 원본 fixtures 변경 없음. 6개 저장점과 통합 시험 커밋 완료.
+15) 11단계: PWA manifest·오프라인 안내·기기 상태 UI 구현. 기기 승인 엔드포인트는 제공 계약에 없어 미연결 표시/승인 요청 비활성화. 실제 승인·기기 서명 통신 NOT_RUN. Supabase 보안 검사에서 발견한 내부 RLS event trigger의 불필요한 공개 실행 권한을 회수했으며 트리거 자체는 보존함.

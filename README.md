@@ -16,7 +16,7 @@ XDR 6종도 같은 저장소에 구현했습니다. 제공된 가상 경보 158�
 
 1) 안전 정책은 `src/decider.mjs`, `aleph.config.json`의 `allowedRoutes`, `docs/db-policy-snapshot.json`의 DB 접근 정책입니다. DB 정책 사본은 2026-11-06 실제 메타데이터를 재조회해 RLS, 본인 소유자 정책 4개, 익명·일반 역할의 직접 조회 차단과 일치함을 확인했습니다. 운영 정책 파일이나 DB 정책은 수정하지 않습니다.
 
-2) 계획 확인과 실행을 분리했습니다. `node scripts/policy-recovery.mjs prepare`는 현재 정책의 사본·SHA-256 해시·Git 버전과 `review.json`을 `artifacts/policy-<번호>`에 만들고, 별도 `test-copy/decider.mjs`의 기기 등록 규칙 한 줄만 바꿉니다. 사본 밖 `trust.json`에 manifest와 확인 계획의 해시를 따로 기록합니다. 출력된 폴더로 `node scripts/policy-recovery.mjs inspect artifacts/policy-<번호>`를 실행하면 **복원할 버전, 변경 파일·줄, 변경 전후 해시와 차이만** 확인할 수 있습니다. 이 명령은 복원하지 않습니다.
+2) **정책 시험 사본 복원(2~3항)과 B 메모 복원(4~5항)은 별도 절차입니다.** 정책 복원은 artifacts 안의 시험 정책 사본만 대상으로 합니다. **B 메모 복원은 지정한 대상 한 건만 변경하며, 다른 메모와 다른 서비스 규칙은 건드리지 않고 기존 감사 기록을 보존합니다.** B 복원에서 정책 복원 절차를 실행하거나 감사 기록을 삭제·덮어쓰지 않으며, 복원 성공 기록만 추가합니다. 정책 시험의 계획 확인과 실행도 분리했습니다. `node scripts/policy-recovery.mjs prepare`는 현재 정책의 사본·SHA-256 해시·Git 버전과 `review.json`을 `artifacts/policy-<번호>`에 만들고, 별도 `test-copy/decider.mjs`의 기기 등록 규칙 한 줄만 바꿉니다. 사본 밖 `trust.json`에 manifest와 확인 계획의 해시를 따로 기록합니다. 출력된 폴더로 `node scripts/policy-recovery.mjs inspect artifacts/policy-<번호>`를 실행하면 **복원할 버전, 변경 파일·줄, 변경 전후 해시와 차이만** 확인할 수 있습니다. 이 명령은 복원하지 않습니다.
 
 3) 변경 범위를 확인한 뒤 `node scripts/policy-recovery.mjs restore artifacts/policy-<번호>`를 실행합니다. **복원 직전에 사본과 manifest를 다시 읽어** 신뢰 해시, 확인한 버전, 바뀔 항목을 재검증하고 실행 전에 다시 표시합니다. 사본 누락·해시 불일치·버전 불일치·계획 후 변경은 쓰기 전에 중단합니다. 실제 경로가 프로젝트의 artifacts 하위인지 검사하며, 운영 정책이나 링크로 연결한 외부 파일에는 쓰지 않습니다. 복원 뒤 사본과 재대조하고 다른 서비스 파일·감사 이력을 보존합니다. `demo`는 같은 시험 사본 절차를 자동 실행하는 연습 명령입니다.
 

@@ -31,7 +31,8 @@ test('deny collections, instructor resources, query operations, reserved paths a
 
 test('API path and dynamic ID must agree; query selector and foreign resource are rejected', () => {
   assert.equal(resourcePath({ url: '/api/notes/a', query: { id: 'a' } }, 'notes'), true);
-  for (const url of ['/api/notes?id=a', '/api/notes/a?operation=export', '/api/announcements/a', '/api/notes/b']) {
+  assert.equal(resourcePath({ url: '/api/notes/a?id=a', query: { id: 'a' } }, 'notes'), true);
+  for (const url of ['/api/notes?id=a', '/api/notes/a?operation=export', '/api/notes/a?id=b', '/api/notes/a?id=a&id=a', '/api/announcements/a', '/api/notes/b']) {
     assert.equal(resourcePath({ url, query: { id: 'a' } }, 'notes'), false);
   }
 });

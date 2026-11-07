@@ -12,33 +12,49 @@ test('self-check file loads without any module import', () => {
   assert.doesNotMatch(source, /\brequire\s*\(/u);
 });
 
-test('every observed result matches a request actually sent; unsent checks are not_run', async () => {
+test('each observed result is the response to the request sent for that same attackId', async () => {
   const originalFetch = globalThis.fetch;
   const sent = [];
   try {
     globalThis.fetch = async (url, init) => {
       const path = new URL(String(url)).pathname;
-      sent.push({ path, method: init?.method });
+      const headers = init?.headers ?? {};
+      sent.push({ path, method: init?.method, attackId: headers['X-Attack-Id'], requestId: headers['X-Request-Id'] });
       const status = path === '/api/restore' ? 405 : path === '/data.json' ? 404 : 401;
-      return Response.json({ error: 'FIXTURE' }, { status, headers: { 'x-request-id': `req-${sent.length}` } });
+      return Response.json({ error: 'FIXTURE' }, { status, headers: { 'x-request-id': `srv-${sent.length}` } });
     };
     const attempts = await runAttackChecks(config);
     assert.ok(attempts.length >= 1 && attempts.length <= 20);
     assert.equal(new Set(attempts.map(item => item.attackId)).size, attempts.length);
     assert.ok(sent.every(item => item.method === 'GET'), 'GET만 보냄');
+    assert.equal(new Set(sent.map(item => item.attackId)).size, sent.length, '점검 하나당 요청 하나');
+
     const ran = attempts.filter(item => item.observed !== 'not_run');
     assert.equal(ran.length, sent.length, '요청 수와 실행 기록 수가 같아야 함');
-    ran.forEach((item, index) => {
-      assert.match(item.observed, /HTTP \d{3}/u, item.attackId);
-      // 앱 요청은 받은 요청 ID를 그대로 적음 (원본 DB 요청은 X-Request-Id를 그대로 적음)
-      assert.ok(item.observed.includes(`req-${index + 1}`), `${item.attackId}는 ${index + 1}번째 요청의 결과여야 함`);
-    });
-    assert.ok(attempts.some(item => item.attackId === 'cross_user_note_read' && item.observed === 'not_run'));
-    assert.ok(attempts.some(item => item.attackId === 'anonymous_restore_post' && item.observed === 'not_run'));
+    for (const item of ran) {
+      const request = sent.find(entry => entry.attackId === item.attackId);
+      assert.ok(request, `${item.attackId}로 보낸 요청이 있어야 함`);
+      assert.match(request.requestId, /^[0-9a-f-]{36}$/u);
+      assert.match(item.observed, /^HTTP \d{3}; /u, item.attackId);
+      assert.ok(item.observed.includes(`보낸 요청 ID ${request.requestId}`), item.attackId);
+      assert.ok(item.observed.includes(`응답 요청 ID srv-${sent.indexOf(request) + 1}`), item.attackId);
+    }
+    for (const id of ['cross_user_note_read', 'anonymous_restore_post', 'local_decider_contract',
+      'local_policy_recovery', 'local_device_signature']) {
+      assert.equal(attempts.find(item => item.attackId === id)?.observed, 'not_run', id);
+      assert.ok(!sent.some(item => item.attackId === id), `${id}는 요청을 보내지 않음`);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
-    globalThis.fetch = async () => { throw new Error('fixture_network_failure'); };
-    const failed = await runAttackChecks(config);
-    assert.ok(failed.filter(item => item.observed !== 'not_run').every(item => item.observed.startsWith('요청 실패')));
+test('a request that gets no HTTP response is recorded as not_run, never as a result', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => { throw new Error('blocked_by_runner'); };
+    const attempts = await runAttackChecks(config);
+    assert.ok(attempts.every(item => item.observed === 'not_run'));
   } finally {
     globalThis.fetch = originalFetch;
   }

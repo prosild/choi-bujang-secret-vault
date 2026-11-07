@@ -48,7 +48,7 @@ test('self-check records actual static/API exposure and does not turn failures i
     assert.deepEqual(requestUrls, ['https://student-defense.vercel.app/data.json',
       'https://student-defense.vercel.app/api/notes']);
     assert.equal(options.redirect, 'error');
-    assert.match(result.observed, /확인 표시 노출 \(HTTP 200\)/u);
+    assert.match(result.observed, /^HTTP 200; .*가상 메모 확인 표시 노출$/u);
     assert.match(api.observed, /비로그인 메모 열람 가능/u);
     globalThis.fetch = async () => new Response('<html>not the data</html>', { status: 200 });
     const [missing, uncertain] = await runAttackChecks(config);
@@ -57,7 +57,8 @@ test('self-check records actual static/API exposure and does not turn failures i
     globalThis.fetch = async () => Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
     assert.match((await runAttackChecks(config))[1].observed, /JSON 오류로 비로그인 요청 거부/u);
     globalThis.fetch = async () => { throw new Error('fixture_network_failure'); };
-    assert.ok((await runAttackChecks(config)).every(item => item.observed.includes('요청 실패')));
+    // 응답을 받지 못한 요청은 결과가 없으므로 not_run으로만 기록합니다.
+    assert.ok((await runAttackChecks(config)).every(item => item.observed === 'not_run'));
   } finally {
     globalThis.fetch = originalFetch;
   }

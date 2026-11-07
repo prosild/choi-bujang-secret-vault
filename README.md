@@ -92,7 +92,7 @@ node --test test/device-approval.test.mjs
 | 비로그인 복원 요청 거부 | 배포 주소 `GET`/`POST /api/restore` | 배포 확인: GET 405, POST 401 JSON 오류 |
 | 실제 서명된 B의 복원 HTTP 왕복, 운영 엔진 재공격 | — | **미실행** (심판 시험 계정이 필요) |
 
-`npm run bundle`의 자체 점검(`src/attack-check.mjs`)은 **실제로 보낸 공개 GET 요청의 HTTP 상태와 요청 ID만** `attackAttempts`에 적습니다. 이 파일은 다른 모듈을 불러오지 않습니다. 위의 사본 재검증·변조 백업 거부·복구 후 재시험처럼 HTTP 요청이 아닌 로컬 시험과 로그인·서명·쓰기가 필요한 시험은 `not_run`으로 남기고, 결과는 `npm run test:recovery`·`npm run verify`로 따로 확인합니다. 이 결과는 학생 자체 점검이며 심판 판정이 아닙니다.
+`npm run bundle`의 자체 점검(`src/attack-check.mjs`)은 다른 모듈을 불러오지 않고, 점검 하나당 공개 GET 하나를 보냅니다. 각 요청에는 점검 ID(`X-Attack-Id`)와 이번에 만든 요청 ID(`X-Request-Id`)를 붙이고, `attackAttempts`의 observed에는 **실제로 받은 HTTP 상태·보낸 요청 ID·응답 요청 ID**만 적습니다. 응답을 받지 못한 요청과 보내지 않은 점검(사본 재검증·변조 백업 거부·복구 후 재시험 같은 로컬 시험, 로그인·서명·쓰기가 필요한 시험)은 observed를 `not_run`으로만 적고, 로컬 결과는 `npm run test:recovery`·`npm run verify`로 따로 확인합니다. 이 결과는 학생 자체 점검이며 심판 판정이 아닙니다.
 
 ## 설치와 실행
 

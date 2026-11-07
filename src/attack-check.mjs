@@ -136,6 +136,9 @@ export async function runAttackChecks(config) {
           : `HTTP ${result.status}; JSON 오류 ${typeof result.body?.error === 'string' ? '있음' : '없음'}; `
             + (result.status === expectedStatus && typeof result.body?.error === 'string' ? '기대와 일치' : '추가 확인 필요') });
     }
+    // 사전 백업 재검증·변조 백업 거부·복구 후 재시험을 이번 실행에서 실제로 돌린 결과입니다.
+    const { runRecoveryEvidence } = await import('../scripts/recovery-evidence.mjs');
+    attempts.push(...await runRecoveryEvidence());
   }
   return attempts;
 }

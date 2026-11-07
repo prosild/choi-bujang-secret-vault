@@ -111,7 +111,16 @@ export async function applyRecovery(directory) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const [command, directory] = process.argv.slice(2);
+  const [command, given] = process.argv.slice(2);
+  let directory = given;
+  if (!directory && (command === 'inspect' || command === 'restore')) {
+    // `npm run restore`처럼 폴더를 생략하면 가장 최근 `npm run backup` 결과를 사용합니다.
+    const { readdir } = await import('node:fs/promises');
+    const latest = (await readdir(join(ROOT, 'artifacts')).catch(() => []))
+      .filter(name => /^policy-\d+$/u.test(name)).sort((a, b) => Number(b.slice(7)) - Number(a.slice(7)))[0];
+    if (!latest) throw Error('backup_not_found: run npm run backup first');
+    directory = join(ROOT, 'artifacts', latest);
+  }
   if (command === 'prepare') console.log(JSON.stringify(await prepareRecovery(), null, 2));
   else if (command === 'inspect' && directory) console.log(JSON.stringify(await inspectRecovery(resolve(directory)), null, 2));
   else if (command === 'restore' && directory) console.log(JSON.stringify(await applyRecovery(resolve(directory)), null, 2));

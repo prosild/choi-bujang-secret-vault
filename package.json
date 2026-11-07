@@ -5,6 +5,8 @@
   "scripts": {
     "verify": "node scripts/verify.mjs",
     "test:recovery": "node scripts/step10-check.mjs",
+    "backup": "node scripts/policy-recovery.mjs prepare",
+    "restore": "node scripts/policy-recovery.mjs restore",
     "build": "node scripts/build-public.mjs",
     "test:r5": "node --test test/r5.test.mjs",
     "test:package": "node --test test/package-starter.test.mjs",

@@ -1,6 +1,6 @@
 # BYTE BACK 방어전 R5 — 12단계 저장점: 탈환 작전실을 완성합니다
 
-현재 제출 단계는 **12단계**입니다(`aleph.config.json`의 `step: 12`). 검사 기준 커밋은 `verification/latest.json`의 `sourceCommit`(현재 `{{CHECKED_COMMIT}}`)이며, 아래 안내는 그 커밋의 코드 기준입니다. 1~11단계 기능은 유지합니다. 과거 단계 기록은 [docs/HISTORY.md](docs/HISTORY.md)에 있습니다.
+현재 제출 단계는 **12단계**입니다(`aleph.config.json`의 `step: 12`). 검사 기준 커밋은 `verification/latest.json`의 `sourceCommit`(현재 `d9f4b57`)이며, 아래 안내는 그 커밋의 코드 기준입니다. 1~11단계 기능은 유지합니다. 과거 단계 기록은 [docs/HISTORY.md](docs/HISTORY.md)에 있습니다.
 
 ## 출처: 제공 엔진과 학생 작업
 

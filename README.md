@@ -53,10 +53,10 @@
 | --- | --- | --- |
 | 승인 전에는 자료가 없음 | `api/notes.js`·`api/announcements/[id].js`·`api/operations.js` → `src/device-auth.mjs` | 서명 없음 401 `DEVICE_SIGNATURE_REQUIRED`, 승인 기록 없는 기기 403 `DEVICE_NOT_APPROVED`, 화면은 자료 대신 승인 안내 |
 | 승인한 기기에서 기존 화면이 열림 | `POST /api/device` 승인 → 같은 기기의 서명 요청 | 로컬·모의 PASS: 승인 뒤 메모 목록·수정·작전실 200 |
-| 서명 없는 보호 요청 | `test/device-approval.test.mjs`, 제출 묶음 `local_device_unsigned_request` | 401 거부 |
-| 서명 뒤 요청 경로 변경 | 같은 검사, `local_device_path_changed` | 401 `DEVICE_SIGNATURE_INVALID` |
-| 서명 뒤 수정 본문 변경 | 같은 검사, `local_device_body_changed` | 401 `DEVICE_SIGNATURE_INVALID` |
-| 위조 서명·다른 기기 사칭·만료·회수 | 같은 검사, `local_device_forged_signature` | 401/403 거부 |
+| 서명 없는 보호 요청 | `test/device-approval.test.mjs`, 제출 묶음 `local_device_signature`(not_run) | 401 거부 |
+| 서명 뒤 요청 경로 변경 | 같은 검사 (제출 묶음에서는 not_run) | 401 `DEVICE_SIGNATURE_INVALID` |
+| 서명 뒤 수정 본문 변경 | 같은 검사 (제출 묶음에서는 not_run) | 401 `DEVICE_SIGNATURE_INVALID` |
+| 위조 서명·다른 기기 사칭·만료·회수 | 같은 검사 (제출 묶음에서는 not_run) | 401/403 거부 |
 | 실제 배포에서 승인 기기 화면 | 사용자 브라우저 | 사용자 확인 필요(비밀번호는 사용자만 입력) |
 
 ### 동작 방식
@@ -86,13 +86,13 @@ node --test test/device-approval.test.mjs
 | 확인 항목 | 근거 | 결과 |
 | --- | --- | --- |
 | 사전 백업을 복원 직전에 다시 읽어 해시로 검증 | `npm run restore`, `scripts/policy-recovery.mjs` | 로컬 PASS: manifest·파일 해시 재검증 후 시험 사본 복원, 사본과 3/3 일치 |
-| 손댄 백업 거부 | `test/policy-recovery.test.mjs`, 제출 묶음 `local_tampered_backup_rejected` | 로컬 PASS: `backup_hash_mismatch`로 중단 |
+| 손댄 백업 거부 | `test/policy-recovery.test.mjs`, 제출 묶음 `local_policy_recovery`(not_run) | 로컬 PASS: `backup_hash_mismatch`로 중단 |
 | B 메모 한 건 복원(ID·소유자·내용 해시 대조) | `POST /api/restore`, `scripts/verify-restore-db.sql` | 실제 Supabase SQL 시험 PASS (2026-11-06, `verification/step10-db.json`) |
-| 복구 뒤 1~9단계 정상·금지 요청 재시험 | `npm run test:recovery`, 제출 묶음 `local_post_restore_regression` | 로컬·모의 PASS: 판정기 4/4, 회귀 38/38 |
+| 복구 뒤 1~9단계 정상·금지 요청 재시험 | `npm run test:recovery`, 제출 묶음 `local_policy_recovery`(not_run) | 로컬·모의 PASS: 판정기 4/4, 회귀 38/38 |
 | 비로그인 복원 요청 거부 | 배포 주소 `GET`/`POST /api/restore` | 배포 확인: GET 405, POST 401 JSON 오류 |
 | 실제 서명된 B의 복원 HTTP 왕복, 운영 엔진 재공격 | — | **미실행** (심판 시험 계정이 필요) |
 
-`npm run bundle`은 제출 묶음을 만들 때 위의 사본 재검증·변조 백업 거부·복구 후 재시험을 **그 자리에서 실제로 다시 실행**하고 결과를 `attackAttempts`에 기록합니다. 이 결과는 학생 자체 점검이며 심판 판정이 아닙니다.
+`npm run bundle`의 자체 점검(`src/attack-check.mjs`)은 **실제로 보낸 공개 GET 요청의 HTTP 상태와 요청 ID만** `attackAttempts`에 적습니다. 이 파일은 다른 모듈을 불러오지 않습니다. 위의 사본 재검증·변조 백업 거부·복구 후 재시험처럼 HTTP 요청이 아닌 로컬 시험과 로그인·서명·쓰기가 필요한 시험은 `not_run`으로 남기고, 결과는 `npm run test:recovery`·`npm run verify`로 따로 확인합니다. 이 결과는 학생 자체 점검이며 심판 판정이 아닙니다.
 
 ## 설치와 실행
 

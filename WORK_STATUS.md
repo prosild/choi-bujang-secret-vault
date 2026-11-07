@@ -2,6 +2,8 @@
 
 현재 저장점: 12단계(2026-11-07). 아래 번호 기록은 시간순 이력이며 최신 상태는 README 10단계와 verification/step10*.json을 기준으로 한다. 사용자가 심판에 직접 제출한다.
 
+2026-11-07 12단계 재제출 준비(2): 심판 S12_SCREEN_MISMATCH(45점) — 메모: npm run bundle 첫 오류 runner_import_failed, 제출 기록(observed)이 심판이 기록한 실제 요청과 다르거나 실제 API 결과 없음. src/attack-check.mjs가 recovery-evidence·device-evidence·decider-test를 동적 import하고, 그 안에서 node:fs의 promises·node:crypto 전체 import·파일 쓰기·execFileSync를 썼으며, HTTP 요청 없이 계산한 로컬 결과를 observed에 적고 있었음. 수정: attack-check를 import 없는 파일로 바꿔 공개 GET만 보내고 받은 HTTP 상태·X-Request-Id만 기록, 요청을 보내지 않는 점검(판정기 연습·정책 복구·기기 서명·타인 메모·POST)은 not_run. 비로그인 개별 메모 GET 추가. 화면(작전실)은 변경 없음. test/attack-check-bundle.test.mjs 추가, 검사 42/42 PASS. node_modules 없는 복사본에서 bundle 완료(불러온 모듈: node:child_process·fs·path·url, src/decider.mjs, src/attack-check.mjs). 실제 배포 대상 요청 결과는 사용자 PC에서 npm run bundle로 확인 필요.
+
 2026-11-07 12단계 재제출 준비: 심판 S12_BUNDLE_UNSUPPORTED(0점) — 제출 묶음이 /api/restore에 POST를 보냄. 격리 환경 조건(node:fs·path·url, child_process는 git 읽기, node:crypto는 randomUUID·sha256, 공개 HTTPS GET·HEAD만)에 맞춰 POST·ECDSA 서명·하위 프로세스 점검을 not_run으로 바꾸고 node:fs/promises·webcrypto 직접 import 제거. 모의 격리 환경에서 node scripts/bundle.mjs 완료(18개 중 not_run 6). 검사 40/40 PASS.
 
 2026-11-07 12단계: 11단계 100점(커밋 75d3db2). 카드 제작 1~3만 구현: 작전실 서버 요약(규칙·탐지·회수·복구, 출처 구분, 가린 기기 ID), 모든 API 응답 X-Request-Id, 승인 기기 전용 실측 재검사(41종 번호 매핑, 미실행·로컬은 막음 제외, 규칙별 거부 수, 최근 사건 50줄, JSON 저장), 기기 승인 회수 건수 기록, README 설치·실행·중지·복구와 엔진 출처. step 12. DB 구조 변경 없음. 실제 배포에서 재검사 실행은 사용자 확인 필요.

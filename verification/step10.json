@@ -1,9 +1,9 @@
 {
   "scope": "local_policy_and_mock_api",
-  "checkedAt": "2026-11-06T14:01:09.556Z",
-  "policyVersion": "08e3a0a463a4e83e7fba3bb61106a5ae60727b6c",
-  "policyArtifact": "artifacts/policy-1793973667646",
-  "trustedManifestHash": "defa16cc20ca7f35e878b2b9aa52a984d2f74a8bd5c82bd4a066fdbce4d44de1",
+  "checkedAt": "2026-11-07T10:14:46.292Z",
+  "policyVersion": "388bcc72988f516b31e900a722d73537fb8095e7",
+  "policyArtifact": "artifacts/policy-1794046484123",
+  "trustedManifestHash": "4285bf1946021fd141d89fdf1899096903d53595eb81dbe24ee8ab6d0ca9c303",
   "changedFiles": [
     "decider.mjs"
   ],

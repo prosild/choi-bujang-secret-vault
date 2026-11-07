@@ -128,14 +128,16 @@ export async function runAttackChecks(config) {
   }
   if (config.step >= 10) {
     if (config.restoreRoute !== '/api/restore') throw new Error('복원 경로 설정을 확인해 주세요.');
-    for (const [method, expectedStatus] of [['GET', 405], ['POST', 401]]) {
-      const result = await inspect(checkUrl(app, config.restoreRoute), {}, method);
-      attempts.push({ attackId: `anonymous_restore_${method.toLowerCase()}`,
-        expected: `${method} 복원 요청이 HTTP ${expectedStatus} JSON 오류로 거부되어야 함`,
-        observed: result.status === null ? `요청 실패: ${result.error}`
-          : `HTTP ${result.status}; JSON 오류 ${typeof result.body?.error === 'string' ? '있음' : '없음'}; `
-            + (result.status === expectedStatus && typeof result.body?.error === 'string' ? '기대와 일치' : '추가 확인 필요') });
-    }
+    const result = await inspect(checkUrl(app, config.restoreRoute), {}, 'GET');
+    attempts.push({ attackId: 'anonymous_restore_get',
+      expected: 'GET 복원 요청이 HTTP 405 JSON 오류로 거부되어야 함',
+      observed: result.status === null ? `요청 실패: ${result.error}`
+        : `HTTP ${result.status}; JSON 오류 ${typeof result.body?.error === 'string' ? '있음' : '없음'}; `
+          + (result.status === 405 && typeof result.body?.error === 'string' ? '기대와 일치' : '추가 확인 필요') });
+    // 제출 묶음은 GET·HEAD만 보낼 수 있는 격리 환경에서도 실행되므로 쓰기 요청(POST)은 보내지 않습니다.
+    attempts.push({ attackId: 'anonymous_restore_post',
+      expected: 'POST 복원 요청이 HTTP 401 JSON 오류로 거부되어야 함 (쓰기 요청이라 제출 묶음에서는 보내지 않음)',
+      observed: 'not_run' });
     // 사전 백업 재검증·변조 백업 거부·복구 후 재시험을 이번 실행에서 실제로 돌린 결과입니다.
     const { runRecoveryEvidence } = await import('../scripts/recovery-evidence.mjs');
     attempts.push(...await runRecoveryEvidence());

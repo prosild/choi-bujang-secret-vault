@@ -26,6 +26,11 @@
   textarea { font: inherit; padding: 10px; border-radius: 6px; resize: vertical; }
   .note-actions { display: flex; gap: 8px; margin-top: 12px; }
   button { cursor: pointer; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .85rem; margin-top: 12px; }
+  th, td { border: 1px solid #51667c; padding: 6px; text-align: left; vertical-align: top; }
+  .events { list-style: decimal; padding-left: 24px; font: .8rem/1.6 ui-monospace, monospace; display: block; }
+  .events li { border: 0; padding: 0; background: none; }
 </style>
 </head>
 <body>
@@ -76,7 +81,15 @@
     <div class="auth-header"><h2 id="operations-title">탈환 작전실</h2><button id="operations-refresh" type="button">기록 새로고침</button></div>
     <p id="operations-status" role="status">서버 기록을 확인하는 중입니다.</p>
     <ul id="operations-list"></ul>
-    <p>신원·기기·경로 검증 기반: ALEPH SDP 엔진</p>
+    <h3>1~11단계 재검사 (실제 API 실측)</h3>
+    <p>승인된 이 기기에서 정상·금지 요청을 실제로 보내고 서버 요청 ID와 시각을 기록합니다. 시험용 가상 메모 한 건을 만들었다가 지웁니다. 실행하지 않은 항목은 통과로 세지 않습니다.</p>
+    <div class="note-actions"><button id="matrix-run" type="button">재검사 실행</button><button id="matrix-save" type="button" disabled>결과 JSON 저장</button></div>
+    <p id="matrix-status" role="status"></p>
+    <div id="matrix-summary"></div>
+    <div class="table-wrap"><table id="matrix-table" hidden><thead><tr><th>번호</th><th>단계</th><th>구분</th><th>요청</th><th>기대</th><th>실측</th><th>결과</th><th>요청 ID</th><th>확인 시각</th></tr></thead><tbody></tbody></table></div>
+    <h3>최근 사건 (최대 50줄)</h3>
+    <ol id="matrix-events" class="events"></ol>
+    <p>신원·기기·경로 검증 기반: ALEPH SDP 엔진 (제공 엔진). 자료실 API·판정기 규칙·탐지 규칙·접속 앱·재검사는 학생 작업입니다.</p>
   </section>
 </main>
 <script type="module" src="/client.js"></script>

@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { serverContext } from '../src/server-context.mjs';
 import { APPROVAL_TTL_MS, MAX_DEVICES, deviceIdFromJwk, loadApprovals, publicJwk, requireApprovedDevice,
-  saveApprovals, statusOnly, verifyProofOfPossession } from '../src/device-auth.mjs';
+  saveApprovals, statusOnly, verifyProofOfPossession, loadDeviceRecord } from '../src/device-auth.mjs';
+import { stampRequest } from '../src/request-id.mjs';
 
 // 11단계 기기 승인
 // GET    : 이 기기의 서버 승인 상태 (승인된 기기는 서명까지 확인)
@@ -10,6 +11,7 @@ import { APPROVAL_TTL_MS, MAX_DEVICES, deviceIdFromJwk, loadApprovals, publicJwk
 // 브라우저가 보낸 deviceRegistered/approved/역할 값은 읽지 않습니다.
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store, private');
+  stampRequest(response);
   response.setHeader('X-Content-Type-Options', 'nosniff');
   if (!['GET', 'POST', 'DELETE'].includes(request.method)) {
     response.setHeader('Allow', 'GET, POST, DELETE');
@@ -36,8 +38,10 @@ export default async function handler(request, response) {
     if (request.method === 'DELETE') {
       const checked = await requireApprovedDevice(request, identity, db, { now });
       if (!checked.ok) return response.status(checked.status).json({ error: checked.error });
-      const kept = (await loadApprovals(db, identity.userId)).filter(item => item.id !== checked.deviceId && item.expiresAt > now);
-      await saveApprovals(db, identity.userId, kept);
+      const record = await loadDeviceRecord(db, identity.userId);
+      const kept = record.approvals.filter(item => item.id !== checked.deviceId && item.expiresAt > now);
+      // 회수 기록은 건수와 시각만 남깁니다(기기 키·계정 정보 없음). 작전실의 회수 상태가 이 값을 읽습니다.
+      await saveApprovals(db, identity.userId, kept, { count: record.revocations.count + 1, lastAt: now });
       return response.status(200).json({ status: 'revoked', deviceId: checked.deviceId });
     }
 

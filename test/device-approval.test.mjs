@@ -103,6 +103,7 @@ test('protected notes need a server-approved device signature bound to method, p
   approvals.set(owner, [approved.approval()]);
   const revoke = await call(device, { method: 'DELETE', url: '/api/device', headers: await signed(approved, { method: 'DELETE', url: '/api/device' }) });
   assert.equal(revoke.result.status, 'revoked');
+  assert.equal(approvals.revocations.get(owner).count, 1);
   assert.equal((await call(notes, { headers: await signed(approved, {}) })).status, 403);
   assert.equal(signIns, 2); // 서명이 틀린 승인 요청은 비밀번호 확인 전에 거부
 });

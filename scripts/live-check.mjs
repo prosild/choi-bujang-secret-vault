@@ -26,7 +26,7 @@ for (const check of checks) {
     const passed = response.status === check.expected && (!jsonRequired || body && typeof body === 'object')
       && (!errorRequired || typeof body?.error === 'string') && !body?.notes;
     results.push({ name: check.name, method: check.method ?? 'GET', path: check.path, requestId, at,
-      expected: check.expected, actual: response.status, status: passed ? 'PASS' : 'FAIL',
+      expected: check.expected, actual: response.status, serverRequestId: response.headers.get('x-request-id'), status: passed ? 'PASS' : 'FAIL',
       ...(check.path === '/aleph.json' ? { deployedCommit: body?.commit ?? body?.commitSha ?? null } : {}) });
   } catch (error) {
     results.push({ name: check.name, method: check.method ?? 'GET', path: check.path, requestId, at,

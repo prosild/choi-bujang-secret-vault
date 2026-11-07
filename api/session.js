@@ -2,9 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import { ACCESS_COOKIE, REFRESH_COOKIE, readCookie, sameOrigin, setSessionCookies, clearSessionCookies } from '../src/session-cookies.mjs';
 import config from '../aleph.config.json' with { type: 'json' };
+import { stampRequest } from '../src/request-id.mjs';
 
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store, private');
+  stampRequest(response);
   response.setHeader('X-Content-Type-Options', 'nosniff');
   if (!['GET', 'POST', 'DELETE'].includes(request.method)) {
     response.setHeader('Allow', 'GET, POST, DELETE');

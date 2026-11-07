@@ -150,5 +150,12 @@ export async function runAttackChecks(config) {
     const { runDeviceEvidence } = await import('../scripts/device-evidence.mjs');
     attempts.push(...await runDeviceEvidence());
   }
+  if (config.step >= 12) {
+    const result = await inspect(checkUrl(app, '/api/operations'));
+    attempts.push({ attackId: 'anonymous_operations_summary',
+      expected: '비로그인 작전실 요청이 HTTP 401 JSON 오류로 거부되어 서버 기록이 보이지 않아야 함',
+      observed: result.status === null ? `요청 실패: ${result.error}`
+        : `HTTP ${result.status}; ${result.status === 401 && typeof result.body?.error === 'string' && !result.body?.counts ? '기대와 일치' : '추가 확인 필요'}` });
+  }
   return attempts;
 }

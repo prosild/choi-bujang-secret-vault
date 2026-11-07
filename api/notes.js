@@ -5,12 +5,14 @@ import { randomUUID } from 'node:crypto';
 import { ACCESS_COOKIE, readCookie, sameOrigin } from '../src/session-cookies.mjs';
 import { resourcePath } from '../src/api-resource.mjs';
 import { requireApprovedDevice } from '../src/device-auth.mjs';
+import { stampRequest } from '../src/request-id.mjs';
 
 let verifier;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store, private');
+  stampRequest(response);
   response.setHeader('X-Content-Type-Options', 'nosniff');
   if (!resourcePath(request, 'notes')) return response.status(400).json({ error: 'INVALID_RESOURCE_PATH' });
   const id = request.query?.id;

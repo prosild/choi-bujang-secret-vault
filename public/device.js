@@ -11,7 +11,7 @@ const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes)))
 const hex = bytes => [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
 const sha256Hex = async text => hex(await crypto.subtle.digest('SHA-256', encoder.encode(text)));
 
-async function createDevice() {
+export async function createDevice() {
   const keys = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign', 'verify']);
   const { kty, crv, x, y } = await crypto.subtle.exportKey('jwk', keys.publicKey);
   const publicKey = { kty, crv, x, y };
@@ -25,14 +25,18 @@ export function currentDevice() {
 }
 
 // 메서드·경로·본문 해시·시각·임의값·기기 ID에 서명합니다. 경로나 본문이 바뀌면 서버 검증이 실패합니다.
+export async function signedHeaders(device, { method = 'GET', path, body, time = Date.now() }) {
+  const target = new URL(path, location.origin);
+  const nonce = b64url(crypto.getRandomValues(new Uint8Array(16)));
+  const text = typeof body === 'string' ? body : '';
+  const data = [VERSION, method, target.pathname, await sha256Hex(text), String(time), nonce, device.id].join('\n');
+  const signature = b64url(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, device.privateKey, encoder.encode(data)));
+  return { 'X-Vault-Device': device.id, 'X-Vault-Time': String(time), 'X-Vault-Nonce': nonce, 'X-Vault-Signature': signature };
+}
+
 export async function deviceFetch(path, { method = 'GET', headers = {}, body } = {}) {
   const device = await currentDevice();
   const target = new URL(path, location.origin);
-  const time = String(Date.now());
-  const nonce = b64url(crypto.getRandomValues(new Uint8Array(16)));
-  const text = typeof body === 'string' ? body : '';
-  const data = [VERSION, method, target.pathname, await sha256Hex(text), time, nonce, device.id].join('\n');
-  const signature = b64url(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, device.privateKey, encoder.encode(data)));
-  return fetch(target.pathname, { method, body, cache: 'no-store', headers: { ...headers,
-    'X-Vault-Device': device.id, 'X-Vault-Time': time, 'X-Vault-Nonce': nonce, 'X-Vault-Signature': signature } });
+  const signed = await signedHeaders(device, { method, path: target.pathname, body });
+  return fetch(target.pathname, { method, body, cache: 'no-store', headers: { ...headers, ...signed } });
 }

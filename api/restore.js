@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import config from '../aleph.config.json' with { type: 'json' };
+import { stampRequest } from '../src/request-id.mjs';
 let verifier;
 
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store, private');
+  stampRequest(response);
   response.setHeader('X-Content-Type-Options', 'nosniff');
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');

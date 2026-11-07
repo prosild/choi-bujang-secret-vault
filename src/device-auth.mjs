@@ -82,18 +82,30 @@ async function verifySignature(jwk, parts, request, now) {
 }
 
 // 서버 승인 기록: 같은 계정의 app_metadata.vault_devices (사용자는 이 값을 직접 바꿀 수 없음)
-export async function loadApprovals(db, userId) {
+// 회수 기록: app_metadata.vault_device_revocations = { count, lastAt }
+export async function loadDeviceRecord(db, userId) {
+  const empty = { approvals: [], revocations: { count: 0, lastAt: null } };
   try {
     const { data, error } = await db.auth.admin.getUserById(userId);
-    if (error || !data?.user) return [];
-    const list = data.user.app_metadata?.vault_devices;
-    return Array.isArray(list) ? list.filter(item => DEVICE_ID.test(item?.id ?? '') && publicJwk(item.jwk)
-      && Number.isSafeInteger(item.expiresAt)) : [];
-  } catch { return []; }
+    if (error || !data?.user) return empty;
+    const meta = data.user.app_metadata ?? {};
+    const list = Array.isArray(meta.vault_devices) ? meta.vault_devices : [];
+    const rev = meta.vault_device_revocations;
+    return {
+      approvals: list.filter(item => DEVICE_ID.test(item?.id ?? '') && publicJwk(item.jwk) && Number.isSafeInteger(item.expiresAt)),
+      revocations: { count: Number.isSafeInteger(rev?.count) && rev.count >= 0 ? rev.count : 0,
+        lastAt: Number.isSafeInteger(rev?.lastAt) ? rev.lastAt : null },
+    };
+  } catch { return empty; }
 }
 
-export async function saveApprovals(db, userId, list) {
-  const { error } = await db.auth.admin.updateUserById(userId, { app_metadata: { vault_devices: list } });
+export async function loadApprovals(db, userId) {
+  return (await loadDeviceRecord(db, userId)).approvals;
+}
+
+export async function saveApprovals(db, userId, list, revocations) {
+  const app_metadata = { vault_devices: list, ...(revocations ? { vault_device_revocations: revocations } : {}) };
+  const { error } = await db.auth.admin.updateUserById(userId, { app_metadata });
   if (error) throw Error('approval_store_failed');
 }
 

@@ -44,7 +44,16 @@ test('dashboard binds counts to verified owner and keeps unknown engine state se
   assert.equal(JSON.stringify(summary.result).includes(owner), false);
   assert.equal(JSON.stringify(summary.result).includes(token), false);
   assert.equal(summary.headers['Cache-Control'], 'no-store, private');
-  assert.equal(summary.result.device.id, fixture.id);
+  assert.equal(summary.result.device.id, `${fixture.id.slice(0, 4)}…`);
+  assert.equal(JSON.stringify(summary.result).includes(fixture.id), false);
+  assert.equal(JSON.stringify(summary.result).includes(fixture.publicKey.x), false);
+  assert.equal(summary.result.summary.revocation.activeDevices, 1);
+  assert.equal(summary.result.summary.revocation.devices[0].current, true);
+  assert.equal(summary.result.summary.recovery.snapshots, 0);
+  assert.equal(summary.result.summary.detection.liveEvents, 'not_connected');
+  assert.equal(summary.result.summary.rules.engineDecisions, 'not_connected');
+  assert.match(summary.headers['X-Request-Id'], /^[0-9a-f-]{36}$/u);
+  assert.equal(summary.result.requestId, summary.headers['X-Request-Id']);
   assert.equal((await call(operations, 'GET', true, false)).result.error, 'DEVICE_SIGNATURE_REQUIRED');
   approvals.set(owner, []);
   assert.equal((await call(operations, 'GET')).status, 403);

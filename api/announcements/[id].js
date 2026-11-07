@@ -4,10 +4,12 @@ import { ACCESS_COOKIE, readCookie } from '../../src/session-cookies.mjs';
 import { resourcePath } from '../../src/api-resource.mjs';
 import { requireApprovedDevice } from '../../src/device-auth.mjs';
 import config from '../../aleph.config.json' with { type: 'json' };
+import { stampRequest } from '../../src/request-id.mjs';
 let verifier;
 
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store, private');
+  stampRequest(response);
   response.setHeader('X-Content-Type-Options', 'nosniff');
   if (request.method !== 'GET') {
     response.setHeader('Allow', 'GET');

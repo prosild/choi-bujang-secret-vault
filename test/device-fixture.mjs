@@ -23,9 +23,13 @@ export function adminUsersMock(url, init, approvals, emails = {}) {
   if (!match) return null;
   const userId = match[1];
   if (!approvals.has(userId)) return Response.json({ msg: 'User not found' }, { status: 404 });
+  approvals.revocations ??= new Map();
   if ((init.method ?? 'GET') === 'PUT') {
-    approvals.set(userId, JSON.parse(init.body).app_metadata.vault_devices);
+    const meta = JSON.parse(init.body).app_metadata;
+    approvals.set(userId, meta.vault_devices);
+    if (meta.vault_device_revocations) approvals.revocations.set(userId, meta.vault_device_revocations);
   }
   return Response.json({ id: userId, aud: 'authenticated', role: 'authenticated', email: emails[userId] ?? null,
-    app_metadata: { provider: 'email', vault_devices: approvals.get(userId) } });
+    app_metadata: { provider: 'email', vault_devices: approvals.get(userId),
+      ...(approvals.revocations.has(userId) ? { vault_device_revocations: approvals.revocations.get(userId) } : {}) } });
 }

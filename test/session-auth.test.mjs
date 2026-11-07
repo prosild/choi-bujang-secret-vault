@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {generateKeyPair,exportJWK,SignJWT} from 'jose';
 import session from '../api/session.js';
 import notes from '../api/notes.js';
+import { deviceFixture, adminUsersMock } from './device-fixture.mjs';
 test('서버 세션과 쿠키 기반 메모 접근을 검증한다', async () => {
 const origin='https://ocacvvmryvtqajlmosqj.supabase.co',app='https://choi-bujang-secret-vault-aleph17.vercel.app',uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 process.env.SUPABASE_URL=origin;process.env.SUPABASE_SECRET_KEY='fixture-secret';
@@ -11,11 +12,13 @@ const token=await new SignJWT({role:'authenticated'}).setProtectedHeader({alg:'E
 const user={id:uid,email:'fixture' + '@' + 'example.test',aud:'authenticated',role:'authenticated'};
 const tokens={access_token:token,refresh_token:'fixture-refresh',token_type:'bearer',expires_in:300,user};
 let refreshes=0;
-globalThis.fetch=async(input,init={})=>{const u=new URL(input instanceof Request?input.url:String(input));if(u.pathname.endsWith('/.well-known/jwks.json'))return Response.json({keys:[jwk]});if(u.pathname==='/auth/v1/token'){if(u.searchParams.get('grant_type')==='refresh_token')refreshes++;return Response.json(tokens)}if(u.pathname==='/auth/v1/user')return Response.json(user);if(u.pathname==='/auth/v1/logout')return new Response(null,{status:204});if(u.pathname==='/rest/v1/study_notes')return Response.json([]);throw Error('unexpected mock route')};
-async function call(fn,method,{cookie,body,origin:originHeader=app,authorization,query}={}){let status,bodyOut;const headers={};const res={setHeader(k,v){headers[k.toLowerCase()]=v},status(n){status=n;return this},json(v){bodyOut=v;return this}};await fn({method,headers:{origin:originHeader,cookie,authorization},body,query},res);return {status,body:bodyOut,headers};}
+const fixture=await deviceFixture(),approvals=new Map([[uid,[fixture.approval()]]]);
+globalThis.fetch=async(input,init={})=>{const u=new URL(input instanceof Request?input.url:String(input));if(u.pathname.endsWith('/.well-known/jwks.json'))return Response.json({keys:[jwk]});const admin=adminUsersMock(u,init,approvals);if(admin)return admin;if(u.pathname==='/auth/v1/token'){if(u.searchParams.get('grant_type')==='refresh_token')refreshes++;return Response.json(tokens)}if(u.pathname==='/auth/v1/user')return Response.json(user);if(u.pathname==='/auth/v1/logout')return new Response(null,{status:204});if(u.pathname==='/rest/v1/study_notes')return Response.json([]);throw Error('unexpected mock route')};
+async function call(fn,method,{cookie,body,origin:originHeader=app,authorization,query,url,extra={}}={}){let status,bodyOut;const headers={};const res={setHeader(k,v){headers[k.toLowerCase()]=v},status(n){status=n;return this},json(v){bodyOut=v;return this}};await fn({method,url,headers:{origin:originHeader,cookie,authorization,...extra},body,query},res);return {status,body:bodyOut,headers};}
 let out=await call(session,'POST',{body:{email:'fixture' + '@' + 'example.test',password:'fixture'}});assert.equal(out.status,200);assert.deepEqual(Object.keys(out.body),['user']);assert.equal(JSON.stringify(out.body).includes(token),false);assert.equal(out.headers['set-cookie'].length,2);assert.ok(out.headers['set-cookie'].every(c=>c.includes('HttpOnly')&&c.includes('Secure')&&c.includes('SameSite=Strict')));
 let cookie=out.headers['set-cookie'].map(x=>x.split(';')[0]).join('; ');
-out=await call(notes,'GET',{cookie});assert.equal(out.status,200);assert.deepEqual(out.body,{notes:[]});
+out=await call(notes,'GET',{cookie,url:'/api/notes'});assert.equal(out.status,401);assert.equal(out.body.error,'DEVICE_SIGNATURE_REQUIRED');
+out=await call(notes,'GET',{cookie,url:'/api/notes',extra:await fixture.sign({method:'GET',url:'/api/notes'})});assert.equal(out.status,200);assert.deepEqual(out.body,{notes:[]});
 out=await call(notes,'POST',{cookie,origin:'https://evil.example',body:{title:'x',body:'x'}});assert.equal(out.status,403);
 out=await call(session,'POST',{origin:'https://evil.example',body:{email:'x',password:'x'}});assert.equal(out.status,403);
 out=await call(session,'GET',{cookie});assert.equal(out.status,200);assert.equal(out.body.user.id,uid);

@@ -42,6 +42,6 @@
 | 36 | 10 | 변조 정책 시험 사본 | 해시 일치 복원 | policy-recovery.test.mjs |
 | 37 | 10 | 백업 해시 불일치 | 중단 | policy-recovery.test.mjs |
 | 38 | 10 | 서명된 B 한 건 복원 | 모의 RPC 허용 | restore-api.test.mjs |
-| 39 | 10 | 실DB 변조·삭제 후 복원 | 원본 해시 일치 | 사용자 요청으로 미실행 |
-| 40 | 11 | 브라우저 승인 값 위조 | 승인으로 인정하지 않음 | client.test.mjs |
-| 41 | 11 | 실제 기기 승인·서명 통신 | 서버 검증 후만 허용 | 엔진 계약 미제공/미연결 |
+| 39 | 10 | 실DB 변조·삭제 후 복원 | 원본 해시 일치 | 실DB SQL 시험 PASS (2026-11-06, verification/step10-db.json) |
+| 40 | 11 | 승인 전 기기·브라우저 승인 값 위조 | 403/401, 자료 없음 | device-approval.test.mjs, operations.test.mjs |
+| 41 | 11 | 서명 없는 요청·서명 뒤 경로/본문 변경·위조 서명 | 401 거부, 승인 기기 정상 서명만 200 | device-approval.test.mjs; 실제 배포의 승인 기기 화면은 사용자 확인 필요 |

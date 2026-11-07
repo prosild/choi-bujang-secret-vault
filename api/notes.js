@@ -4,6 +4,7 @@ import config from '../aleph.config.json' with { type: 'json' };
 import { randomUUID } from 'node:crypto';
 import { ACCESS_COOKIE, readCookie, sameOrigin } from '../src/session-cookies.mjs';
 import { resourcePath } from '../src/api-resource.mjs';
+import { requireApprovedDevice } from '../src/device-auth.mjs';
 
 let verifier;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -40,6 +41,12 @@ export default async function handler(request, response) {
     verifier ??= createLoginVerifier({ config, supabaseSecretKey: secret });
     const identity = await verifier(authorization);
     if (!identity) return response.status(401).json({ error: 'UNAUTHORIZED' });
+    const supabase = createClient(url, secret, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    // 11단계: 서버가 승인한 기기의 서명 요청만 보호 자료에 닿습니다.
+    const device = await requireApprovedDevice(request, identity, supabase);
+    if (!device.ok) return response.status(device.status).json({ error: device.error });
     if (individual && (typeof id !== 'string' || !uuid.test(id))) {
       return response.status(400).json({ error: 'INVALID_ID' });
     }
@@ -56,9 +63,6 @@ export default async function handler(request, response) {
         return response.status(400).json({ error: 'INVALID_NOTE' });
       }
     }
-    const supabase = createClient(url, secret, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
     const notes = supabase.from('study_notes');
     if (!individual && request.method === 'POST') {
       const noteId = body.id ?? randomUUID();

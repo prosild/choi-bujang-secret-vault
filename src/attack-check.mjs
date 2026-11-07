@@ -140,5 +140,15 @@ export async function runAttackChecks(config) {
     const { runRecoveryEvidence } = await import('../scripts/recovery-evidence.mjs');
     attempts.push(...await runRecoveryEvidence());
   }
+  if (config.step >= 11) {
+    const result = await inspect(checkUrl(app, '/api/device'));
+    attempts.push({ attackId: 'anonymous_device_status',
+      expected: '비로그인 기기 상태 요청이 HTTP 401 JSON 오류로 거부되어야 함',
+      observed: result.status === null ? `요청 실패: ${result.error}`
+        : `HTTP ${result.status}; ${result.status === 401 && typeof result.body?.error === 'string' ? '기대와 일치' : '추가 확인 필요'}` });
+    // 기기 서명 검사 함수를 가상 기기 키로 이번 실행에서 실제로 돌린 결과입니다.
+    const { runDeviceEvidence } = await import('../scripts/device-evidence.mjs');
+    attempts.push(...await runDeviceEvidence());
+  }
   return attempts;
 }

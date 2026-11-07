@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { generateKeyPair, exportJWK, SignJWT } from 'jose';
 import notes from '../api/notes.js';
 import config from '../aleph.config.json' with { type: 'json' };
+import { deviceFixture, adminUsersMock } from './device-fixture.mjs';
 
 test('API uses verified owner for CRUD and hides another owner even with body/query/header spoofing', async t => {
   const originalFetch = globalThis.fetch;
@@ -22,9 +23,12 @@ test('API uses verified owner for CRUD and hides another owner even with body/qu
     .setProtectedHeader({ alg: 'ES256', kid: jwk.kid }).setIssuer(config.identityProvider.issuer)
     .setAudience('authenticated').setSubject(owner).setIssuedAt().setExpirationTime('5m').sign(keys.privateKey)));
   const rows = new Map(); let writes = 0;
+  const devices = [await deviceFixture(), await deviceFixture()];
+  const approvals = new Map(owners.map((owner, index) => [owner, [devices[index].approval()]]));
   globalThis.fetch = async (input, init = {}) => {
     const u = new URL(input instanceof Request ? input.url : String(input));
     if (u.pathname.endsWith('/.well-known/jwks.json')) return Response.json({ keys: [jwk] });
+    const admin = adminUsersMock(u, init, approvals); if (admin) return admin;
     assert.equal(u.pathname, '/rest/v1/study_notes');
     const method = init.method ?? 'GET';
     if (method === 'POST') {
@@ -43,9 +47,11 @@ test('API uses verified owner for CRUD and hides another owner even with body/qu
   };
   async function call(method, ownerIndex, { individual = false, body, query, url } = {}) {
     let status, result;
-    await notes({ method, url: url ?? (individual ? `/api/notes/${id}` : '/api/notes'),
+    const target = url ?? (individual ? `/api/notes/${id}` : '/api/notes');
+    const signed = await devices[ownerIndex].sign({ method, url: target, body });
+    await notes({ method, url: target,
       query: query ?? (individual ? { id } : {}), body,
-      headers: { authorization: `Bearer ${tokens[ownerIndex]}`, 'x-user-id': owners[0], 'x-role': 'instructor' } }, {
+      headers: { authorization: `Bearer ${tokens[ownerIndex]}`, 'x-user-id': owners[0], 'x-role': 'instructor', ...signed } }, {
       setHeader() {}, status(code) { status = code; return this; }, json(value) { result = value; },
     });
     return { status, result };

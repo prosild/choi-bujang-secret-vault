@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createLoginVerifier } from '../../src/verify-login.mjs';
 import { ACCESS_COOKIE, readCookie } from '../../src/session-cookies.mjs';
 import { resourcePath } from '../../src/api-resource.mjs';
+import { requireApprovedDevice } from '../../src/device-auth.mjs';
 import config from '../../aleph.config.json' with { type: 'json' };
 let verifier;
 
@@ -24,8 +25,11 @@ export default async function handler(request, response) {
   }
   try {
     verifier ??= createLoginVerifier({ config, supabaseSecretKey: secret });
-    if (!await verifier(authorization)) return response.status(401).json({ error: 'UNAUTHORIZED' });
+    const identity = await verifier(authorization);
+    if (!identity) return response.status(401).json({ error: 'UNAUTHORIZED' });
     const db = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+    const device = await requireApprovedDevice(request, identity, db);
+    if (!device.ok) return response.status(device.status).json({ error: device.error });
     const { data, error } = await db.from('vault_announcements').select('resource_id,title,content')
       .eq('resource_id', id).eq('published', true).maybeSingle();
     if (error) return response.status(502).json({ error: 'ANNOUNCEMENT_UNAVAILABLE' });

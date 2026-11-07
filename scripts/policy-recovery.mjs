@@ -1,8 +1,10 @@
-import { readFile, writeFile, mkdir, realpath } from 'node:fs/promises';
+import { promises as fsp } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { resolve, join, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const { readFile, writeFile, mkdir, realpath, readdir } = fsp;
 
 const ROOT = resolve(import.meta.dirname, '..');
 const FILES = ['decider.mjs', 'allowed-routes.json', 'db-policy.json'];
@@ -115,7 +117,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   let directory = given;
   if (!directory && (command === 'inspect' || command === 'restore')) {
     // `npm run restore`처럼 폴더를 생략하면 가장 최근 `npm run backup` 결과를 사용합니다.
-    const { readdir } = await import('node:fs/promises');
     const latest = (await readdir(join(ROOT, 'artifacts')).catch(() => []))
       .filter(name => /^policy-\d+$/u.test(name)).sort((a, b) => Number(b.slice(7)) - Number(a.slice(7)))[0];
     if (!latest) throw Error('backup_not_found: run npm run backup first');

@@ -1,47 +1,26 @@
-// 11단계 자체 점검: 제출 묶음을 만들 때 서버의 기기 서명 검사 함수를 가상 기기 키로 실제 실행합니다.
-// 실제 계정·비밀번호·DB를 쓰지 않으며 심판 판정과 별도입니다.
-import { randomBytes, webcrypto } from 'node:crypto';
-import { APPROVAL_TTL_MS, bodyText, canonicalRequest, deviceIdFromJwk, requireApprovedDevice } from '../src/device-auth.mjs';
-
-async function fixture() {
-  const keys = await webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign', 'verify']);
-  const { kty, crv, x, y } = await webcrypto.subtle.exportKey('jwk', keys.publicKey);
-  const jwk = { kty, crv, x, y }, id = deviceIdFromJwk(jwk);
-  const sign = async (method, url, body) => {
-    const time = String(Date.now()), nonce = randomBytes(16).toString('base64url');
-    const data = canonicalRequest({ method, path: url, bodyText: bodyText({ body, headers: {} }), time, nonce, deviceId: id });
-    const signature = Buffer.from(await webcrypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, keys.privateKey, Buffer.from(data))).toString('base64url');
-    return { 'x-vault-device': id, 'x-vault-time': time, 'x-vault-nonce': nonce, 'x-vault-signature': signature };
-  };
-  return { id, jwk, sign };
-}
+// 11단계 자체 점검 (제출 묶음용).
+// 제출 묶음은 node:crypto 중 randomUUID·sha256만 쓸 수 있는 격리 환경에서도 실행됩니다.
+// 그래서 ECDSA 키 생성·서명이 필요 없는 검사만 서버 검사 함수로 실제 실행하고,
+// 서명이 필요한 검사는 not_run으로 남깁니다(같은 검사는 test/device-approval.test.mjs에서 npm run verify로 실행).
+import { requireApprovedDevice } from '../src/device-auth.mjs';
 
 export async function runDeviceEvidence() {
-  const approved = await fixture(), other = await fixture();
-  let records = [];
-  const db = { auth: { admin: { getUserById: async () => ({ data: { user: { app_metadata: { vault_devices: records } } }, error: null }) } } };
+  const db = { auth: { admin: { getUserById: async () => ({ data: { user: { app_metadata: { vault_devices: [] } } }, error: null }) } } };
   const identity = { kind: 'student', userId: 'fixture-user' };
-  const noteA = '/api/notes/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', noteB = '/api/notes/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-  const check = async (method, url, body, headers) => {
-    const result = await requireApprovedDevice({ method, url, body, headers, query: {} }, identity, db);
+  const check = async headers => {
+    const result = await requireApprovedDevice({ method: 'GET', url: '/api/notes', headers, query: {} }, identity, db);
     return result.ok ? 'allow' : `${result.status} ${result.error}`;
   };
-  const before = await check('GET', '/api/notes', undefined, await approved.sign('GET', '/api/notes'));
-  records = [{ id: approved.id, jwk: approved.jwk, approvedAt: Date.now(), expiresAt: Date.now() + APPROVAL_TTL_MS }];
-  const after = await check('GET', '/api/notes', undefined, await approved.sign('GET', '/api/notes'));
-  const unsigned = await check('GET', '/api/notes', undefined, {});
-  const pathChanged = await check('GET', noteB, undefined, await approved.sign('GET', noteA));
-  const body = { title: '가상', body: '시험' };
-  const bodyChanged = await check('PUT', noteA, { ...body, body: '서명 뒤 변경' }, await approved.sign('PUT', noteA, body));
-  const forged = await check('GET', '/api/notes', undefined, { ...await approved.sign('GET', '/api/notes'),
-    'x-vault-signature': (await other.sign('GET', '/api/notes'))['x-vault-signature'] });
+  // 형식만 맞춘 가상 서명 헤더: 서버 승인 기록에 없는 기기이므로 서명 검증 전에 거부되어야 합니다.
+  const unapprovedHeaders = { 'x-vault-device': '0123456789abcdef', 'x-vault-time': String(Date.now()),
+    'x-vault-nonce': 'A'.repeat(22), 'x-vault-signature': 'A'.repeat(86) };
+  const notRun = (attackId, expected) => ({ attackId, expected: `${expected} (ECDSA 서명이 필요해 제출 묶음에서는 실행하지 않음)`, observed: 'not_run' });
   return [
-    { attackId: 'local_device_approval_gate',
-      expected: '승인 전 기기는 보호 자료 거부, 서버 승인 기록이 생긴 같은 기기는 허용; 심판 판정과 별도',
-      observed: `승인 전 ${before}; 승인 후 ${after}` },
-    { attackId: 'local_device_unsigned_request', expected: '서명 없는 보호 요청 거부', observed: unsigned },
-    { attackId: 'local_device_path_changed', expected: '서명 뒤 요청 경로를 바꾸면 거부', observed: pathChanged },
-    { attackId: 'local_device_body_changed', expected: '서명 뒤 수정 본문을 바꾸면 거부', observed: bodyChanged },
-    { attackId: 'local_device_forged_signature', expected: '다른 키로 만든 위조 서명 거부', observed: forged },
+    { attackId: 'local_device_unsigned_request', expected: '서명 없는 보호 요청 거부', observed: await check({}) },
+    { attackId: 'local_device_unapproved', expected: '서버 승인 기록이 없는 기기의 요청 거부', observed: await check(unapprovedHeaders) },
+    notRun('local_device_approved_allow', '서버 승인 기기의 올바른 서명 요청 허용'),
+    notRun('local_device_path_changed', '서명 뒤 요청 경로를 바꾸면 거부'),
+    notRun('local_device_body_changed', '서명 뒤 수정 본문을 바꾸면 거부'),
+    notRun('local_device_forged_signature', '다른 키로 만든 위조 서명 거부'),
   ];
 }

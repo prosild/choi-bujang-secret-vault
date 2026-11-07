@@ -1,13 +1,14 @@
 // 10단계 자체 점검: 제출 묶음을 만들 때 실제로 실행한 로컬 결과만 돌려줍니다.
 // 심판 판정·운영 엔진·실제 DB 시험과는 별도입니다. 운영 정책 파일(src, aleph.config.json)은 쓰지 않습니다.
-import { spawnSync } from 'node:child_process';
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+// 제출 묶음 격리 환경에서는 git 읽기 외의 하위 프로세스를 띄울 수 없으므로 전체 테스트 실행은 not_run으로 남깁니다.
+import { promises as fsp } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { prepareRecovery, inspectRecovery, restoreTestPolicy } from './policy-recovery.mjs';
 import { checkDecider } from './decider-test.mjs';
 
-const root = resolve(import.meta.dirname, '..');
+const { readFile, writeFile } = fsp;
+
 const POLICY_FILES = ['decider.mjs', 'allowed-routes.json', 'db-policy.json'];
 
 async function tamperedBackupRejected() {
@@ -50,12 +51,11 @@ export async function runRecoveryEvidence() {
   // 3) 복원된 정책으로 1~9단계 정상·금지 요청 재시험 (판정기 + 모의 API 소유자·경로 검사)
   const { decide, RULE_IDS } = await import(pathToFileURL(join(target, 'decider.mjs')).href);
   const decider = await checkDecider({ decide, ruleIds: RULE_IDS });
-  const tests = (await readdir(join(root, 'test'))).filter(name => name.endsWith('.test.mjs')).sort().map(name => `test/${name}`);
-  const run = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...tests], { cwd: root, encoding: 'utf8', windowsHide: true });
-  const count = key => Number(new RegExp(`^# ${key} (\\d+)`, 'mu').exec(run.stdout ?? '')?.[1] ?? 0);
   attempts.push({ attackId: 'local_post_restore_regression',
-    expected: '복원된 정책에서 정상 요청 허용·미등록 기기·B의 A 자료 요청·위조 경로 거부 유지; 심판 판정과 별도',
-    observed: `복원 판정기 가상 요청 ${decider.filter(item => item.passed).length}/${decider.length} 통과; `
-      + `1~9단계 포함 전체 회귀 검사 ${count('pass')}/${count('tests')} 통과 (exit ${run.status})` });
+    expected: '복원된 정책 판정기에서 정상 요청 허용·미등록 기기 거부·재인증 요구 유지; 심판 판정과 별도',
+    observed: `복원 판정기 가상 요청 ${decider.filter(item => item.passed).length}/${decider.length} 통과` });
+  attempts.push({ attackId: 'local_post_restore_test_suite',
+    expected: '복구 뒤 1~11단계 전체 회귀 검사(node --test) 통과 (하위 프로세스가 필요해 제출 묶음에서는 실행하지 않음; npm run test:recovery로 실행)',
+    observed: 'not_run' });
   return attempts;
 }

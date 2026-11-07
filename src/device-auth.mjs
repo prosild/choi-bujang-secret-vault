@@ -3,9 +3,11 @@
 // - 서버는 승인된 기기의 공개키만 Supabase Auth의 app_metadata(서버 키로만 쓰기 가능)에 기록합니다.
 // - 보호 요청은 메서드·경로·본문 해시·시각·임의값·기기 ID에 대한 서명이 맞고,
 //   그 기기가 같은 계정으로 서버 승인 기록에 있을 때만 통과합니다.
-import { createHash, webcrypto } from 'node:crypto';
+// 제출 묶음 격리 환경(node:crypto는 randomUUID·sha256만)에서도 불러올 수 있도록 서명 검증 기능은 필요할 때만 꺼냅니다.
+import * as nodeCrypto from 'node:crypto';
 
-const { subtle } = webcrypto;
+const subtle = () => nodeCrypto.webcrypto.subtle;
+const createHash = algorithm => nodeCrypto.createHash(algorithm);
 export const SIGNATURE_VERSION = 'vault-device-v1';
 export const MAX_CLOCK_SKEW_MS = 60_000;
 export const APPROVAL_TTL_MS = 12 * 60 * 60 * 1000;
@@ -76,8 +78,8 @@ async function verifySignature(jwk, parts, request, now) {
   const data = canonicalRequest({ method: request.method, path, bodyText: bodyText(request),
     time: parts.time, nonce: parts.nonce, deviceId: parts.deviceId });
   try {
-    const key = await subtle.importKey('jwk', publicJwk(jwk), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
-    return await subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, Buffer.from(parts.signature, 'base64url'), Buffer.from(data, 'utf8'));
+    const key = await subtle().importKey('jwk', publicJwk(jwk), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+    return await subtle().verify({ name: 'ECDSA', hash: 'SHA-256' }, key, Buffer.from(parts.signature, 'base64url'), Buffer.from(data, 'utf8'));
   } catch { return false; }
 }
 

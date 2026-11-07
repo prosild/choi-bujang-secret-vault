@@ -9,6 +9,8 @@ const config = {
   sampleMarker: 'SAMPLE_NOTE_1',
   publicAppUrl: 'https://student-defense.vercel.app',
 };
+// 실제 네트워크 응답처럼 요청 주소(url)를 가진 응답을 만듭니다.
+const networkResponse = (url, response) => Object.defineProperty(response, 'url', { value: String(url) });
 const env = {
   VERCEL_GIT_PROVIDER: 'github',
   VERCEL_GIT_REPO_OWNER: 'Student-A',
@@ -39,10 +41,10 @@ test('self-check records actual static/API exposure and does not turn failures i
     globalThis.fetch = async (url, init) => {
       requestUrls.push(String(url));
       options = init;
-      return new Response(JSON.stringify({ sampleMarker: 'SAMPLE_NOTE_1', notes: [{ title: '가상', body: '합성 시험' }] }), {
+      return networkResponse(url, new Response(JSON.stringify({ sampleMarker: 'SAMPLE_NOTE_1', notes: [{ title: '가상', body: '합성 시험' }] }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
-      });
+      }));
     };
     const [result, api] = await runAttackChecks(config);
     assert.deepEqual(requestUrls, ['https://student-defense.vercel.app/data.json',
@@ -50,11 +52,11 @@ test('self-check records actual static/API exposure and does not turn failures i
     assert.equal(options.redirect, 'error');
     assert.match(result.observed, /^HTTP 200; .*가상 메모 확인 표시 노출$/u);
     assert.match(api.observed, /비로그인 메모 열람 가능/u);
-    globalThis.fetch = async () => new Response('<html>not the data</html>', { status: 200 });
+    globalThis.fetch = async url => networkResponse(url, new Response('<html>not the data</html>', { status: 200 }));
     const [missing, uncertain] = await runAttackChecks(config);
     assert.match(missing.observed, /확인 표시 노출 없음/u);
     assert.match(uncertain.observed, /별도 확인 필요/u);
-    globalThis.fetch = async () => Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+    globalThis.fetch = async url => networkResponse(url, Response.json({ error: 'UNAUTHORIZED' }, { status: 401 }));
     assert.match((await runAttackChecks(config))[1].observed, /JSON 오류로 비로그인 요청 거부/u);
     globalThis.fetch = async () => { throw new Error('fixture_network_failure'); };
     // 응답을 받지 못한 요청은 결과가 없으므로 not_run으로만 기록합니다.
